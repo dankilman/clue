@@ -40,9 +40,12 @@ commands:
         type_names: [git_repo]
 
     checkout:
+      args:
+        - name: branch
+          help: branch name to checkout
       workflow: execute_operation
       parameters:
         operation: git.checkout
         operation_kwargs:
-          branch: { get_arg: 1 }
+          branch: { arg: branch }
         type_names: [git_repo]
