@@ -1,0 +1,10 @@
+#! /bin/bash
+
+eval "$(register-python-argcomplete cfy)"
+eval "$(register-python-argcomplete systest)"
+
+function nose_workflows() {
+    local prod_plugins={{repositories_dir}}/cloudify-manager/plugins
+    local py_path=.:$prod_plugins/windows-agent-installer:$prod_plugins/windows-plugin-installer:$prod_plugins/agent-installer:$prod_plugins/plugin-installer:$PYTHONPATH
+    PYTHONPATH=$py_path nosetests --nocapture --nologcapture -v $@
+}

@@ -1,0 +1,816 @@
+tosca_definitions_version: cloudify_dsl_1_0
+
+imports:
+  # - http://www.getcloudify.org/spec/cloudify/3.1/types.yaml
+  - file:///home/dan/dev/cloudify/cloudify-manager/resources/rest-service/cloudify/types/types.yaml
+
+plugins:
+  self:
+    executor: central_deployment_agent
+    install: false
+
+inputs:
+  virtualenv_name:
+    description: The virtualenv name to pass to mkvirtualenv
+    default: env
+  workdir:
+    description: working directory to install things in
+  default_branch:
+    description: default repositories branch
+    default: master
+  virtualenvwrapper_path:
+    description: >
+      path to virtualenvwrapper script to be sourced before creating
+      the virtualenv
+    default: virtualenvwrapper.sh
+
+relationships:
+
+  package_depends_on_repo:
+    derived_from: cloudify.relationships.depends_on
+    source_interfaces:
+      cloudify.interfaces.relationship_lifecycle:
+        preconfigure:
+          implementation: self.operations.operations.configure_python_package_path
+          inputs:
+            repo_location:
+              default: { get_attribute: [TARGET, repo_location] }
+            base_package_path:
+              default: { get_property: [SOURCE, path] }
+
+  package_depends_on_virtualenv:
+    derived_from: cloudify.relationships.depends_on
+    source_interfaces:
+      cloudify.interfaces.relationship_lifecycle:
+        preconfigure:
+          implementation: self.operations.operations.configure_virtualenv_location
+          inputs:
+            virtualenv_location:
+              default: { get_attribute: [TARGET, virtualenv_location] }
+
+  package_depends_on_package:
+    derived_from: cloudify.relationships.depends_on
+    source_interfaces:
+      cloudify.interfaces.relationship_lifecycle:
+        preconfigure:
+          implementation: self.operations.operations.configure_package_dependency
+          inputs:
+            target_package_path:
+              default: { get_attribute: [TARGET, package_path] }
+
+node_types:
+
+  directory:
+    derived_from: cloudify.nodes.Root
+    properties:
+      location:
+        description: a directory node
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: self.operations.operations.makedirs
+          inputs:
+            location:
+              default: { get_property: [SELF, location] }
+
+  git_repo:
+    derived_from: cloudify.nodes.Root
+    properties:
+      name:
+        description: the repo name
+      organization:
+        description: the github organization
+        default: cloudify-cosmo
+      branch:
+        description: the repo branch
+        default: { get_input: default_branch }
+      location:
+        default: { get_input: workdir }
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: self.operations.operations.git_clone
+          inputs:
+            location:
+              default: { get_property: [SELF, location] }
+            organization:
+              default: { get_property: [SELF, organization] }
+            repo:
+              default: { get_property: [SELF, name] }
+            branch:
+              default: { get_property: [SELF, branch] }
+        configure:
+          implementation: self.operations.operations.git_install_commit_msg_hook
+          inputs:
+            resource_path:
+              default: resources/commit-msg
+      git:
+        pull:
+          implementation: self.operations.operations.git_pull
+          inputs: {}
+        status:
+          implementation: self.operations.operations.git_status
+          inputs: {}
+
+  virtualenv:
+    derived_from: cloudify.nodes.Root
+    properties:
+      name:
+        description: the virtualenv name
+        default: env
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: operations/virtualenv.sh
+          inputs:
+            process:
+              default:
+                env:
+                  operation: mkvirtualenv
+                  virtualenvwrapper_path: { get_input: virtualenvwrapper_path }
+                  virtualenv_name: { get_property: [SELF, name] }
+
+  python_package:
+    derived_from: cloudify.nodes.Root
+    properties:
+      name:
+        description: the python package name
+      path:
+        description: >
+          path to package relative to the repo it depends on
+        default: ''
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        configure:
+          implementation: self.operations.operations.add_self_requirement
+          inputs:
+            package_path:
+              default: { get_attribute: [SELF, package_path] }
+      pip:
+        install:
+          implementation: self.operations.operations.pip_install
+          inputs:
+            virtualenv_location:
+              default: { get_attribute: [SELF, virtualenv_location] }
+            package_path:
+              default: { get_attribute: [SELF, package_path] }
+
+  requirements:
+    derived_from: cloudify.nodes.Root
+    properties:
+      path:
+        description: >
+          path to requirements file that should be installed
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        start:
+          implementation: self.operations.operations.add_additional_requirements
+          inputs:
+            requirements_path:
+              default: { get_property: [SELF, path] }
+
+  package_installer:
+    derived_from: cloudify.nodes.Root
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        start:
+          implementation: self.operations.operations.install_packages
+          inputs: {}
+
+node_templates:
+
+  stub_host:
+    type: cloudify.nodes.Compute
+    properties:
+      install_agent: false
+
+  workdir:
+    type: directory
+    properties:
+      location: { get_input: workdir }
+
+  virtualenv:
+    type: virtualenv
+    properties:
+      name: { get_input: virtualenv_name }
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        configure:
+          implementation: self.operations.operations.process_postactivate
+          inputs:
+            resource_path: resources/postactivate
+            repositories_dir: { get_property: [workdir, location] }
+            virtualenv_location: { get_attribute: [SELF, virtualenv_location] }
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+      - target: stub_host
+        type: cloudify.relationships.contained_in
+
+  ######################
+  # github repositories
+  ######################
+
+  manager_repo:
+    type: git_repo
+    properties:
+      name: cloudify-manager
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  dsl_parser_repo:
+    type: git_repo
+    properties:
+      name: cloudify-dsl-parser
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  cli_repo:
+    type: git_repo
+    properties:
+      name: cloudify-cli
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  plugins_common_repo:
+    type: git_repo
+    properties:
+      name: cloudify-plugins-common
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  rest_client_repo:
+    type: git_repo
+    properties:
+      name: cloudify-rest-client
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  script_plugin_repo:
+    type: git_repo
+    properties:
+      name: cloudify-script-plugin
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  diamond_plugin_repo:
+    type: git_repo
+    properties:
+      name: cloudify-diamond-plugin
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  amqp_influxdb_repo:
+    type: git_repo
+    properties:
+      name: cloudify-amqp-influxdb
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  build_dashboard_repo:
+    type: git_repo
+    properties:
+      name: cloudify-build-dashboard
+      branch: gh-pages
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  system_tests_launcher_repo:
+    type: git_repo
+    properties:
+      name: system-tests-launcher
+      branch: gh-pages
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  cli_fabric_tasks_repo:
+    type: git_repo
+    properties:
+      name: cloudify-cli-fabric-tasks
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  docker_plugin_repo:
+    type: git_repo
+    properties:
+      name: cloudify-docker-plugin
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  chef_plugin_repo:
+    type: git_repo
+    properties:
+      name: cloudify-chef-plugin
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  puppet_plugin_repo:
+    type: git_repo
+    properties:
+      name: cloudify-puppet-plugin
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  fabric_plugin_repo:
+    type: git_repo
+    properties:
+      name: cloudify-fabric-plugin
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  vsphere_plugin_repo:
+    type: git_repo
+    properties:
+      name: cloudify-vsphere-plugin
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  softlayer_plugin_repo:
+    type: git_repo
+    properties:
+      name: cloudify-softlayer-plugin
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  hello_world_example_repo:
+    type: git_repo
+    properties:
+      name: cloudify-hello-world-example
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  nodecellar_example_repo:
+    type: git_repo
+    properties:
+      name: cloudify-nodecellar-example
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  manager_blueprints_repo:
+    type: git_repo
+    properties:
+      name: cloudify-manager-blueprints
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  openstack_plugin_repo:
+    type: git_repo
+    properties:
+      name: cloudify-openstack-plugin
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  plugin_template_repo:
+    type: git_repo
+    properties:
+      name: cloudify-plugin-template
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  system_tests_repo:
+    type: git_repo
+    properties:
+      name: cloudify-system-tests
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  packager_repo:
+    type: git_repo
+    properties:
+      name: cloudify-packager
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  cli_packager_repo:
+    type: git_repo
+    properties:
+      name: cloudify-cli-packager
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  getcloudify_repo:
+    type: git_repo
+    properties:
+      name: getcloudify.org
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  flask_securest_repo:
+    type: git_repo
+    properties:
+      name: flask-securest
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  ##################
+  # python packages
+  ##################
+
+  rest_service_package:
+    type: python_package
+    properties:
+      name: cloudify-rest-service
+      path: rest-service
+    relationships:
+      - target: dsl_parser_package
+        type: package_depends_on_package
+      - target: flask_securest_package
+        type: package_depends_on_package
+      - target: manager_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  workflows_package:
+    type: python_package
+    properties:
+      name: cloudify-workflows
+      path: workflows
+    relationships:
+      - target: plugins_common_package
+        type: package_depends_on_package
+      - target: manager_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  agent_installer_package:
+    type: python_package
+    properties:
+      name: cloudify-agent-installer-plugin
+      path: plugins/agent-installer
+    relationships:
+      - target: plugins_common_package
+        type: package_depends_on_package
+      - target: manager_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  windows_agent_installer_package:
+    type: python_package
+    properties:
+      name: cloudify-windows-agent-installer-plugin
+      path: plugins/windows-agent-installer
+    relationships:
+      - target: plugins_common_package
+        type: package_depends_on_package
+      - target: manager_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  plugin_installer_package:
+    type: python_package
+    properties:
+      name: cloudify-plugin-installer-plugin
+      path: plugins/plugin-installer
+    relationships:
+      - target: plugins_common_package
+        type: package_depends_on_package
+      - target: manager_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  windows_plugin_installer_package:
+    type: python_package
+    properties:
+      name: cloudify-windows-plugin-installer-plugin
+      path: plugins/windows-plugin-installer
+    relationships:
+      - target: plugins_common_package
+        type: package_depends_on_package
+      - target: manager_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  riemann_controller_package:
+    type: python_package
+    properties:
+      name: cloudify-riemann-controller-plugin
+      path: plugins/riemann-controller
+    relationships:
+      - target: plugins_common_package
+        type: package_depends_on_package
+      - target: manager_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  manager_tests_package:
+    type: python_package
+    properties:
+      name: cloudify-integration-tests
+      path: tests
+    relationships:
+      - target: plugins_common_package
+        type: package_depends_on_package
+      - target: rest_client_package
+        type: package_depends_on_package
+      - target: script_plugin_package
+        type: package_depends_on_package
+      - target: diamond_plugin_package
+        type: package_depends_on_package
+      - target: dsl_parser_package
+        type: package_depends_on_package
+      - target: rest_service_package
+        type: package_depends_on_package
+      - target: manager_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  cli_package:
+    type: python_package
+    properties:
+      name: cloudify
+    relationships:
+      - target: dsl_parser_package
+        type: package_depends_on_package
+      - target: rest_client_package
+        type: package_depends_on_package
+      - target: plugins_common_package
+        type: package_depends_on_package
+      - target: script_plugin_package
+        type: package_depends_on_package
+      - target: cli_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  dsl_parser_package:
+    type: python_package
+    properties:
+      name: cloudify-dsl-parser
+    relationships:
+      - target: dsl_parser_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  rest_client_package:
+    type: python_package
+    properties:
+      name: cloudify-rest-client
+    relationships:
+      - target: rest_client_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  plugins_common_package:
+    type: python_package
+    properties:
+      name: cloudify-plugins-common
+    relationships:
+      - target: rest_client_package
+        type: package_depends_on_package
+      - target: plugins_common_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  script_plugin_package:
+    type: python_package
+    properties:
+      name: cloudify-script-plugin
+    relationships:
+      - target: plugins_common_package
+        type: package_depends_on_package
+      - target: script_plugin_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  diamond_plugin_package:
+    type: python_package
+    properties:
+      name: cloudify-script-plugin
+    relationships:
+      - target: plugins_common_package
+        type: package_depends_on_package
+      - target: diamond_plugin_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  amqp_influxdb_package:
+    type: python_package
+    properties:
+      name: cloudify-script-plugin
+    relationships:
+      - target: amqp_influxdb_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  docker_plugin_package:
+    type: python_package
+    properties:
+      name: cloudify-docker-plugin
+    relationships:
+      - target: plugins_common_package
+        type: package_depends_on_package
+      - target: docker_plugin_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  fabric_plugin_package:
+    type: python_package
+    properties:
+      name: cloudify-fabric-plugin
+    relationships:
+      - target: plugins_common_package
+        type: package_depends_on_package
+      - target: fabric_plugin_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  vsphere_plugin_package:
+    type: python_package
+    properties:
+      name: cloudify-vsphere-plugin
+    relationships:
+      - target: plugins_common_package
+        type: package_depends_on_package
+      - target: vsphere_plugin_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  softlayer_plugin_package:
+    type: python_package
+    properties:
+      name: cloudify-softlayer-plugin
+    relationships:
+      - target: plugins_common_package
+        type: package_depends_on_package
+      - target: softlayer_plugin_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  chef_plugin_package:
+    type: python_package
+    properties:
+      name: cloudify-chef-plugin
+    relationships:
+      - target: plugins_common_package
+        type: package_depends_on_package
+      - target: chef_plugin_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  puppet_plugin_package:
+    type: python_package
+    properties:
+      name: cloudify-puppet-plugin
+    relationships:
+      - target: plugins_common_package
+        type: package_depends_on_package
+      - target: puppet_plugin_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  openstack_plugin_package:
+    type: python_package
+    properties:
+      name: cloudify-openstack-plugin
+    relationships:
+      - target: plugins_common_package
+        type: package_depends_on_package
+      - target: openstack_plugin_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  system_tests_package:
+    type: python_package
+    properties:
+      name: cloudify-system-tests
+    relationships:
+      - target: cli_package
+        type: package_depends_on_package
+      - target: system_tests_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  flask_securest_package:
+    type: python_package
+    properties:
+      name: Flask-SecuREST
+    relationships:
+      - target: flask_securest_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  #####################
+  # additional packages
+  ######################
+
+  requirements:
+    type: requirements
+    properties:
+      path: resources/dev-requirements.txt
+    relationships:
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  #####################
+  # python package installers
+  #####################
+
+  package_installer1:
+    type: package_installer
+    relationships:
+      - target: requirements
+        type: cloudify.relationships.depends_on
+      - target: virtualenv
+        type: cloudify.relationships.depends_on
+
+  package_installer2:
+    type: package_installer
+    relationships:
+      - target: package_installer1
+        type: cloudify.relationships.depends_on
+      - target: rest_service_package
+        type: cloudify.relationships.depends_on
+      - target: workflows_package
+        type: cloudify.relationships.depends_on
+      - target: agent_installer_package
+        type: cloudify.relationships.depends_on
+      - target: plugin_installer_package
+        type: cloudify.relationships.depends_on
+      - target: riemann_controller_package
+        type: cloudify.relationships.depends_on
+      - target: manager_tests_package
+        type: cloudify.relationships.depends_on
+      - target: windows_agent_installer_package
+        type: cloudify.relationships.depends_on
+      - target: windows_plugin_installer_package
+        type: cloudify.relationships.depends_on
+      - target: cli_package
+        type: cloudify.relationships.depends_on
+      - target: dsl_parser_package
+        type: cloudify.relationships.depends_on
+      - target: rest_client_package
+        type: cloudify.relationships.depends_on
+      - target: plugins_common_package
+        type: cloudify.relationships.depends_on
+      - target: script_plugin_package
+        type: cloudify.relationships.depends_on
+      - target: diamond_plugin_package
+        type: cloudify.relationships.depends_on
+      - target: amqp_influxdb_package
+        type: cloudify.relationships.depends_on
+      - target: docker_plugin_package
+        type: cloudify.relationships.depends_on
+      - target: fabric_plugin_package
+        type: cloudify.relationships.depends_on
+      - target: openstack_plugin_package
+        type: cloudify.relationships.depends_on
+      - target: system_tests_package
+        type: cloudify.relationships.depends_on
+      - target: chef_plugin_package
+        type: cloudify.relationships.depends_on
+      - target: puppet_plugin_package
+        type: cloudify.relationships.depends_on
+      - target: vsphere_plugin_package
+        type: cloudify.relationships.depends_on
+      - target: softlayer_plugin_package
+        type: cloudify.relationships.depends_on

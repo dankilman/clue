@@ -1,0 +1,48 @@
+blueprint: cloudify-dev/blueprint.yaml
+
+output_handler: cloudify_dev.output:OutputHandler
+
+task:
+  retries: 5
+  retry_interval: 1
+  thread_pool_size: 20
+
+commands:
+  install:
+    workflow: install
+
+  pip:
+    _nested: true
+
+    install:
+      workflow: execute_operation
+      parameters:
+        operation: pip.install
+        run_by_dependency_order: true
+        type_names: [python_package]
+
+  git:
+    _nested: true
+
+    status:
+      task:
+        retries: 0
+        retry_interval: 0
+        thread_pool_size: 1
+      workflow: execute_operation
+      parameters:
+        operation: git.status
+        type_names: [git_repo]
+    pull:
+      workflow: execute_operation
+      parameters:
+        operation: git.pull
+        type_names: [git_repo]
+
+    checkout:
+      workflow: execute_operation
+      parameters:
+        operation: git.checkout
+        operation_kwargs:
+          branch: { get_arg: 1 }
+        type_names: [git_repo]

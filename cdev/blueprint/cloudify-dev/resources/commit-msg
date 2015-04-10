@@ -1,0 +1,21 @@
+#!/bin/python
+
+import re
+import subprocess
+import sys
+
+CURRENT_BRANCH_CMD = 'git symbolic-ref --short HEAD'
+JIRA_ISSUE_REGEX = '(CFY-\d+)-.*?'
+
+output_message_path = sys.argv[1]
+branch_name = subprocess.check_output(
+    CURRENT_BRANCH_CMD.split(' ')).decode('utf-8')
+
+match = re.match(JIRA_ISSUE_REGEX, branch_name)
+if match:
+    jira_issue = match.group(1)
+    with open(output_message_path) as f:
+        current_message = f.read()
+    if not current_message.startswith(jira_issue):
+        with open(output_message_path, 'w') as f:
+            f.write('{0} {1}'.format(jira_issue, current_message))
