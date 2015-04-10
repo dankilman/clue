@@ -11,7 +11,7 @@ setup(
     install_requires=[
         'sh',
         'path.py',
-        'Jijna2',
+        'Jinja2',
         'workflowcmd==0.1'
     ],
     entry_points={
