@@ -1,4 +1,3 @@
-import sys
 import tempfile
 import os
 
@@ -45,8 +44,8 @@ def git_clone(location, organization, repo, branch, **_):
 
 @operation
 def git_install_commit_msg_hook(resource_path, **_):
-    repo_location = ctx.instance.runtime_properties['repo_location']
-    commit_msg_hook_path = path(repo_location) / '.git' / 'hooks' / 'commit-msg'
+    repo_location = path(ctx.instance.runtime_properties['repo_location'])
+    commit_msg_hook_path = repo_location / '.git' / 'hooks' / 'commit-msg'
     if commit_msg_hook_path.exists():
         ctx.logger.warn('{} already exits, skipping hook installation.'
                         .format(commit_msg_hook_path))
@@ -77,7 +76,8 @@ def configure_python_package_path(repo_location, base_package_path, **_):
 
 @operation
 def configure_virtualenv_location(virtualenv_location, **_):
-    ctx.source.instance.runtime_properties['virtualenv_location'] = virtualenv_location
+    ctx.source.instance.runtime_properties[
+        'virtualenv_location'] = virtualenv_location
 
 
 @operation
@@ -112,24 +112,30 @@ def _add_requierment(package_path, instance):
 
 @operation
 def pip_install(virtualenv_location, package_path, **_):
-    pip = _sh(sh.Command(os.path.join(virtualenv_location, 'bin', 'pip')), ctx.logger)
+    pip = _sh(sh.Command(os.path.join(virtualenv_location, 'bin', 'pip')),
+              ctx.logger)
     pip.install(e=package_path).wait()
 
 
 @operation
 def install_packages(**_):
     package_node_instance_ids = ctx.capabilities.get_all().keys()
-    package_node_instances = [ctx._endpoint.storage.get_node_instance(instance_id)
-                              for instance_id in package_node_instance_ids]
-    package_node_instances = [instance for instance in package_node_instances
-                              if 'virtualenv_location' in instance.runtime_properties]
+    package_node_instances = [
+        ctx._endpoint.storage.get_node_instance(instance_id)
+        for instance_id in package_node_instance_ids]
+    package_node_instances = [
+        instance for instance in package_node_instances
+        if 'virtualenv_location' in instance.runtime_properties]
     virtualenvs = set((instance.runtime_properties['virtualenv_location']
                        for instance in package_node_instances))
 
     for virtualenv_location in virtualenvs:
-        pip = _sh(sh.Command(os.path.join(virtualenv_location, 'bin', 'pip')), ctx.logger)
-        virutalenv_package_instances = [instance for instance in package_node_instances
-                                        if instance.runtime_properties['virtualenv_location'] == virtualenv_location]
+        pip = _sh(sh.Command(os.path.join(virtualenv_location, 'bin', 'pip')),
+                  ctx.logger)
+        virutalenv_package_instances = [
+            instance for instance in package_node_instances
+            if instance.runtime_properties[
+                'virtualenv_location'] == virtualenv_location]
         graph = nx.DiGraph()
         for instance in virutalenv_package_instances:
             graph.add_node(instance.id)
@@ -139,17 +145,20 @@ def install_packages(**_):
         requirements = []
         for instance_id in topological_sort:
             instance = ctx._endpoint.storage.get_node_instance(instance_id)
-            for requirement in instance.runtime_properties.get('requirements', []):
+            for requirement in instance.runtime_properties.get('requirements',
+                                                               []):
                 if requirement not in requirements:
                     requirements.append(requirement)
-        requirements_file = tempfile.mktemp(prefix='requirements-', suffix='.txt')
+        requirements_file = tempfile.mktemp(prefix='requirements-',
+                                            suffix='.txt')
         with open(requirements_file, 'w') as f:
             f.write('\n'.join(requirements))
         pip.install(requirement=requirements_file).wait()
 
 
 @operation
-def process_postactivate(virtualenv_location, resource_path, repositories_dir, **_):
+def process_postactivate(virtualenv_location, resource_path, repositories_dir,
+                         **_):
     repositories_dir = os.path.expanduser(repositories_dir)
     template = jinja2.Template(ctx.get_resource(resource_path))
     with open(path(virtualenv_location) / 'bin' / 'postactivate', 'w') as f:
