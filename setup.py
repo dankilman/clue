@@ -9,6 +9,9 @@ setup(
     description='cloudify-dev CLI',
     zip_safe=False,
     install_requires=[
+        'sh',
+        'path.py',
+        'Jijna2',
         'workflowcmd==0.1'
     ],
     entry_points={
