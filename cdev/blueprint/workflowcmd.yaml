@@ -39,6 +39,7 @@ commands:
           help: branch name to checkout
       workflow: execute_operation
       parameters:
+        allow_kwargs_override: true
         operation: git.checkout
         operation_kwargs:
           branch: { arg: branch }

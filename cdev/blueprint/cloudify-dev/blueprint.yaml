@@ -86,6 +86,10 @@ node_types:
         default: { get_input: default_branch }
       location:
         default: { get_input: workdir }
+      repo_type:
+        description: >
+          One of: core, plugin, misc. Used by git checkout to figure out
+          build branch names.
     interfaces:
       cloudify.interfaces.lifecycle:
         create:
@@ -111,6 +115,17 @@ node_types:
         status:
           implementation: self.operations.operations.git_status
           inputs: {}
+        checkout:
+          implementation: self.operations.operations.git_checkout
+          inputs:
+            repo_type:
+              default: { get_property: [SELF, repo_type ] }
+            branch:
+              default: ''
+              description: |
+                Which branch to checkout out, if starts with a dot (.), it will be
+                treated as a core/plugin checkout and a version prefix will be attached
+                according to the repo_type
 
   virtualenv:
     derived_from: cloudify.nodes.Root
@@ -215,6 +230,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-manager
+      repo_type: core
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -223,6 +239,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-dsl-parser
+      repo_type: core
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -231,6 +248,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-cli
+      repo_type: core
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -239,6 +257,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-plugins-common
+      repo_type: core
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -247,6 +266,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-rest-client
+      repo_type: core
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -255,6 +275,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-script-plugin
+      repo_type: plugin
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -263,6 +284,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-diamond-plugin
+      repo_type: plugin
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -271,6 +293,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-amqp-influxdb
+      repo_type: core
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -280,6 +303,7 @@ node_templates:
     properties:
       name: cloudify-build-dashboard
       branch: gh-pages
+      repo_type: misc
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -289,6 +313,7 @@ node_templates:
     properties:
       name: system-tests-launcher
       branch: gh-pages
+      repo_type: misc
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -297,6 +322,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-cli-fabric-tasks
+      repo_type: misc
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -305,6 +331,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-docker-plugin
+      repo_type: plugin
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -313,6 +340,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-chef-plugin
+      repo_type: plugin
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -321,6 +349,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-puppet-plugin
+      repo_type: plugin
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -329,6 +358,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-fabric-plugin
+      repo_type: plugin
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -337,6 +367,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-vsphere-plugin
+      repo_type: plugin
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -345,6 +376,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-softlayer-plugin
+      repo_type: plugin
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -353,6 +385,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-hello-world-example
+      repo_type: core
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -361,6 +394,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-nodecellar-example
+      repo_type: core
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -369,6 +403,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-manager-blueprints
+      repo_type: core
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -377,6 +412,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-openstack-plugin
+      repo_type: plugin
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -385,6 +421,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-plugin-template
+      repo_type: core
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -393,6 +430,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-system-tests
+      repo_type: core
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -401,6 +439,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-packager
+      repo_type: core
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -409,6 +448,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-cli-packager
+      repo_type: core
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -417,6 +457,7 @@ node_templates:
     type: git_repo
     properties:
       name: getcloudify.org
+      repo_type: misc
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -425,6 +466,7 @@ node_templates:
     type: git_repo
     properties:
       name: flask-securest
+      repo_type: misc
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on

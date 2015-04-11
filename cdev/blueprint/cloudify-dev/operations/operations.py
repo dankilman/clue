@@ -8,6 +8,7 @@ from path import path
 
 from cloudify import ctx
 from cloudify.decorators import operation
+from cloudify import exceptions
 
 
 def _sh(command, logger):
@@ -66,6 +67,22 @@ def git_status(**_):
     git = _git()
     git('rev-parse', '--abbrev-ref', 'HEAD').wait()
     git.status(s=True).wait()
+
+
+@operation
+def git_checkout(repo_type, branch, **_):
+    git = _git()
+    if repo_type == 'misc':
+        return
+    if repo_type not in ['core', 'plugin']:
+        raise exceptions.NonRecoverableError('Unhandled repo type: {}'
+                                             .format(repo_type))
+    if not branch:
+        raise exceptions.NonRecoverableError('Branch is not defined')
+    if branch.startswith('.'):
+        template = '3{}' if repo_type == 'core' else '1{}'
+        branch = template.format(branch)
+    git.checkout(branch)
 
 
 @operation
