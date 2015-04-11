@@ -23,6 +23,11 @@ inputs:
       path to virtualenvwrapper script to be sourced before creating
       the virtualenv
     default: virtualenvwrapper.sh
+  register_python_argcomplete:
+    description: >
+      names to register with python arg-complete when on virtualenv
+      postactivate. (cfy and cdev are always registered)
+    default: []
 
 relationships:
 
@@ -216,6 +221,7 @@ node_templates:
             resource_path: resources/postactivate
             repositories_dir: { get_property: [workdir, location] }
             virtualenv_location: { get_attribute: [SELF, virtualenv_location] }
+            register_python_argcomplete: { get_input: register_python_argcomplete }
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on

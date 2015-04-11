@@ -174,9 +174,16 @@ def install_packages(**_):
 
 
 @operation
-def process_postactivate(virtualenv_location, resource_path, repositories_dir,
-                         **_):
+def process_postactivate(
+        virtualenv_location,
+        resource_path,
+        repositories_dir,
+        register_python_argcomplete,
+        **_):
     repositories_dir = os.path.expanduser(repositories_dir)
     template = jinja2.Template(ctx.get_resource(resource_path))
+    variables = dict(
+        repositories_dir=repositories_dir,
+        register_python_argcomplete=register_python_argcomplete)
     with open(path(virtualenv_location) / 'bin' / 'postactivate', 'w') as f:
-        f.write(template.render(repositories_dir=repositories_dir))
+        f.write(template.render(**variables))

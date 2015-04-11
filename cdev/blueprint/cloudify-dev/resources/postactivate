@@ -1,8 +1,10 @@
 #! /bin/bash
 
 eval "$(register-python-argcomplete cfy)"
-eval "$(register-python-argcomplete systest)"
 eval "$(register-python-argcomplete cdev)"
+{% for name in register_python_argcomplete %}
+eval "$(register-python-argcomplete {{name}})"
+{% endfor %}
 
 function nose_workflows() {
     local prod_plugins={{repositories_dir}}/cloudify-manager/plugins
