@@ -108,9 +108,10 @@ def add_self_requirement(package_path, **_):
 
 
 @operation
-def add_additional_requirements(requirements_path, **_):
+def add_additional_requirements(
+        requirements_path,
+        requirements, **_):
     raw_requirements = ctx.get_resource(requirements_path)
-    requirements = []
     for req in raw_requirements.splitlines():
         req = req.strip()
         if not req or req.startswith('#'):

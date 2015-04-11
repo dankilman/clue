@@ -28,6 +28,10 @@ inputs:
       names to register with python arg-complete when on virtualenv
       postactivate. (cfy and cdev are always registered)
     default: []
+  requirements:
+    description: >
+      additional requirements to install in virtualenv
+    default: []
 
 relationships:
 
@@ -181,11 +185,16 @@ node_types:
       path:
         description: >
           path to requirements file that should be installed
+      requirements:
+        description: additional requirements that should get installed
+        default: []
     interfaces:
       cloudify.interfaces.lifecycle:
         start:
           implementation: self.operations.operations.add_additional_requirements
           inputs:
+            requirements:
+              default: { get_property: [SELF, requirements] }
             requirements_path:
               default: { get_property: [SELF, path] }
 
@@ -795,6 +804,7 @@ node_templates:
     type: requirements
     properties:
       path: resources/dev-requirements.txt
+      requirements: { get_input: requirements }
     relationships:
       - target: virtualenv
         type: package_depends_on_virtualenv

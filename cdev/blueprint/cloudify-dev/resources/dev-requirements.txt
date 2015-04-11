@@ -1,11 +1,3 @@
-# personal use
-ipython
-prompt-toolkit
-sh
-path.py
-ansicolors
-pawk
-
 # for cloudify-dev blueprint
 virtualenv
 virtualenvwrapper
@@ -19,9 +11,8 @@ nose-cov
 mock
 
 # so they get installed properly and with a valid version
-protobuf==2.4.1
 Flask-RESTful==0.2.5
 jinja2==2.7.2
 
-# for script plugin
+# for ctx proxy
 pyzmq
