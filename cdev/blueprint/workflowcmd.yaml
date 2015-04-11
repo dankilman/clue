@@ -1,7 +1,5 @@
 blueprint: cloudify-dev/blueprint.yaml
 
-output_handler: cloudify_dev.output:OutputHandler
-
 task:
   retries: 5
   retry_interval: 1
@@ -12,8 +10,6 @@ commands:
     workflow: install
 
   pip:
-    _nested: true
-
     install:
       workflow: execute_operation
       parameters:
@@ -22,8 +18,6 @@ commands:
         type_names: [python_package]
 
   git:
-    _nested: true
-
     status:
       task:
         retries: 0
