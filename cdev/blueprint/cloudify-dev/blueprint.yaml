@@ -872,3 +872,9 @@ node_templates:
         type: cloudify.relationships.depends_on
       - target: softlayer_plugin_package
         type: cloudify.relationships.depends_on
+
+outputs:
+  repositories:
+    value: { get_property: [workdir, location] }
+  virtualenv:
+    value: { get_attribute: [virtualenv, virtualenv_location] }
