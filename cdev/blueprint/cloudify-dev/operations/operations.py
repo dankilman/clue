@@ -82,7 +82,7 @@ def git_checkout(repo_type, branch, **_):
     if branch.startswith('.'):
         template = '3{}' if repo_type == 'core' else '1{}'
         branch = template.format(branch)
-    git.checkout(branch)
+    git.checkout(branch).wait()
 
 
 @operation
