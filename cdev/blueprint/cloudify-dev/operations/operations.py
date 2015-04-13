@@ -136,10 +136,7 @@ def pip_install(virtualenv_location, package_path, **_):
 
 
 @operation
-def nose_run(test, virtualenv_location, test_path, **_):
-    if not test:
-        ctx.logger.warn('No test configured')
-        return
+def nose_run(virtualenv_location, test_path, **_):
     nose = _sh(sh.Command(os.path.join(virtualenv_location, 'bin',
                                        'nosetests')),
                ctx.logger)

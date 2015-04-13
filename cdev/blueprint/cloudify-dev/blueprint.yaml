@@ -186,8 +186,6 @@ node_types:
         run:
           implementation: self.operations.operations.nose_run
           inputs:
-            test:
-              default: { get_property: [SELF, test] }
             virtualenv_location:
               default: { get_attribute: [SELF, virtualenv_location] }
             test_path:
@@ -510,7 +508,6 @@ node_templates:
     properties:
       name: cloudify-rest-service
       path: rest-service
-      test: manager_rest/test
     relationships:
       - target: dsl_parser_package
         type: package_depends_on_package
@@ -676,7 +673,6 @@ node_templates:
     type: python_package
     properties:
       name: cloudify-script-plugin
-      test: script_runner/tests
     relationships:
       - target: plugins_common_package
         type: package_depends_on_package
