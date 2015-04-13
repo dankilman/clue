@@ -47,7 +47,7 @@ commands:
     args:
       - name: package
         help: name of python package to run nosetests on
-        completer: cdev.completion:PackageCompleter
+        completer: cdev.completion:package_completer
     task:
       retries: 0
       retry_interval: 0
