@@ -136,6 +136,17 @@ def pip_install(virtualenv_location, package_path, **_):
 
 
 @operation
+def nose_run(test, virtualenv_location, test_path, **_):
+    if not test:
+        ctx.logger.warn('No test configured')
+        return
+    nose = _sh(sh.Command(os.path.join(virtualenv_location, 'bin',
+                                       'nosetests')),
+               ctx.logger)
+    nose(test_path, nocapture=True, nologcapture=True, verbose=True).wait()
+
+
+@operation
 def install_packages(**_):
     package_node_instance_ids = ctx.capabilities.get_all().keys()
     package_node_instances = [

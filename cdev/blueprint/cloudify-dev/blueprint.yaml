@@ -1,4 +1,4 @@
-tosca_definitions_version: cloudify_dsl_1_0
+tosca_definitions_version: cloudify_dsl_1_1
 
 imports:
   # - http://www.getcloudify.org/spec/cloudify/3.1/types.yaml
@@ -163,6 +163,10 @@ node_types:
         description: >
           path to package relative to the repo it depends on
         default: ''
+      test:
+        description: >
+          path to root test package relative to [SELF, path]
+        default: ''
     interfaces:
       cloudify.interfaces.lifecycle:
         configure:
@@ -178,6 +182,17 @@ node_types:
               default: { get_attribute: [SELF, virtualenv_location] }
             package_path:
               default: { get_attribute: [SELF, package_path] }
+      nose:
+        run:
+          implementation: self.operations.operations.nose_run
+          inputs:
+            test:
+              default: { get_property: [SELF, test] }
+            virtualenv_location:
+              default: { get_attribute: [SELF, virtualenv_location] }
+            test_path:
+              default: { concat: [{ get_attribute: [SELF, package_path] }, '/',
+                                  { get_property: [SELF, test] }] }
 
   requirements:
     derived_from: cloudify.nodes.Root
@@ -495,6 +510,7 @@ node_templates:
     properties:
       name: cloudify-rest-service
       path: rest-service
+      test: manager_rest/test
     relationships:
       - target: dsl_parser_package
         type: package_depends_on_package

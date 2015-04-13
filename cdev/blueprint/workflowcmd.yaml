@@ -42,3 +42,13 @@ commands:
         operation_kwargs:
           branch: { arg: branch }
         type_names: [git_repo]
+
+  nose:
+    args:
+      - name: package
+        help: name of python package to run nosetests on
+        completer: cdev.completion:PackageCompleter
+    workflow: execute_operation
+    parameters:
+      operation: nose.run
+      node_ids: [{ arg: package }]
