@@ -48,6 +48,9 @@ commands:
       - name: package
         help: name of python package to run nosetests on
         completer: cdev.completion:PackageCompleter
+    task:
+      retries: 0
+      retry_interval: 0
     workflow: execute_operation
     parameters:
       operation: nose.run

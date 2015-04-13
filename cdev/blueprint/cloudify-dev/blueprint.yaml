@@ -676,6 +676,7 @@ node_templates:
     type: python_package
     properties:
       name: cloudify-script-plugin
+      test: script_runner/tests
     relationships:
       - target: plugins_common_package
         type: package_depends_on_package

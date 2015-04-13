@@ -143,7 +143,13 @@ def nose_run(test, virtualenv_location, test_path, **_):
     nose = _sh(sh.Command(os.path.join(virtualenv_location, 'bin',
                                        'nosetests')),
                ctx.logger)
-    nose(test_path, nocapture=True, nologcapture=True, verbose=True).wait()
+    try:
+        nose(test_path,
+             nocapture=True,
+             nologcapture=True,
+             verbose=True).wait()
+    except:
+        raise exceptions.NonRecoverableError()
 
 
 @operation
