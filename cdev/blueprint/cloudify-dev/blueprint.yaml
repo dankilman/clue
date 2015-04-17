@@ -445,6 +445,15 @@ node_templates:
       - target: workdir
         type: cloudify.relationships.depends_on
 
+  aws_plugin_repo:
+    type: git_repo
+    properties:
+      name: cloudify-aws-plugin
+      repo_type: plugin
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
   plugin_template_repo:
     type: git_repo
     properties:
@@ -787,6 +796,18 @@ node_templates:
       - target: virtualenv
         type: package_depends_on_virtualenv
 
+  aws_plugin_package:
+    type: python_package
+    properties:
+      name: cloudify-aws-plugin
+    relationships:
+      - target: plugins_common_package
+        type: package_depends_on_package
+      - target: aws_plugin_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
   system_tests_package:
     type: python_package
     properties:
@@ -874,6 +895,8 @@ node_templates:
       - target: fabric_plugin_package
         type: cloudify.relationships.depends_on
       - target: openstack_plugin_package
+        type: cloudify.relationships.depends_on
+      - target: aws_plugin_package
         type: cloudify.relationships.depends_on
       - target: system_tests_package
         type: cloudify.relationships.depends_on
