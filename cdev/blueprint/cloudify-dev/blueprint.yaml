@@ -508,6 +508,24 @@ node_templates:
       - target: workdir
         type: cloudify.relationships.depends_on
 
+  agent_repo:
+    type: git_repo
+    properties:
+      name: cloudify-agent
+      repo_type: core
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  agent_packager_repo:
+    type: git_repo
+    properties:
+      name: cloudify-agent-packager
+      repo_type: core
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
   ##################
   # python packages
   ##################
@@ -830,6 +848,34 @@ node_templates:
       - target: virtualenv
         type: package_depends_on_virtualenv
 
+  agent_package:
+    type: python_package
+    properties:
+      name: cloudify-agent
+    relationships:
+      - target: plugins_common_package
+        type: package_depends_on_package
+      - target: script_plugin_package
+        type: package_depends_on_package
+      - target: diamond_plugin_package
+        type: package_depends_on_package
+      - target: agent_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
+  agent_packager_package:
+    type: python_package
+    properties:
+      name: cloudify-agent
+    relationships:
+      - target: agent_package
+        type: package_depends_on_package
+      - target: agent_repo
+        type: package_depends_on_repo
+      - target: virtualenv
+        type: package_depends_on_virtualenv
+
   #####################
   # additional packages
   ######################
@@ -907,6 +953,10 @@ node_templates:
       - target: vsphere_plugin_package
         type: cloudify.relationships.depends_on
       - target: softlayer_plugin_package
+        type: cloudify.relationships.depends_on
+      - target: agent_package
+        type: cloudify.relationships.depends_on
+      - target: agent_packager_package
         type: cloudify.relationships.depends_on
 
 outputs:
