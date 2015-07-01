@@ -867,11 +867,11 @@ node_templates:
   agent_packager_package:
     type: python_package
     properties:
-      name: cloudify-agent
+      name: cloudify-agent-packager
     relationships:
       - target: agent_package
         type: package_depends_on_package
-      - target: agent_repo
+      - target: agent_packager_repo
         type: package_depends_on_repo
       - target: virtualenv
         type: package_depends_on_virtualenv
