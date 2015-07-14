@@ -4,6 +4,7 @@ import os
 import sh
 import networkx as nx
 import jinja2
+import yaml
 from path import path
 
 from cloudify import ctx
@@ -72,14 +73,22 @@ def git_status(**_):
 @operation
 def git_checkout(repo_type, branch, **_):
     git = _git()
-    if repo_type == 'misc':
+    branches_file_path = os.path.expanduser(branch)
+    if os.path.exists(branches_file_path):
+        with open(branches_file_path) as f:
+            branches = yaml.safe_load(f.read())
+        name = ctx.node.properties['name']
+        if name not in branches:
+            return
+        branch = branches[name]
+    elif repo_type == 'misc':
         return
-    if repo_type not in ['core', 'plugin']:
+    elif repo_type not in ['core', 'plugin']:
         raise exceptions.NonRecoverableError('Unhandled repo type: {}'
                                              .format(repo_type))
-    if not branch:
+    elif not branch:
         raise exceptions.NonRecoverableError('Branch is not defined')
-    if branch.startswith('.'):
+    elif branch.startswith('.'):
         template = '3{}' if repo_type == 'core' else '1{}'
         branch = template.format(branch)
     git.checkout(branch).wait()
