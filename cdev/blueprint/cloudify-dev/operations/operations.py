@@ -95,6 +95,24 @@ def git_checkout(repo_type, branch, **_):
 
 
 @operation
+def configure_constraints(resource_path, additional_constraints, **_):
+    constraints = []
+    if resource_path:
+        raw_constraints = ctx.get_resource(resource_path)
+        for constraint in raw_constraints.splitlines():
+            constraint = constraint.strip()
+            if not constraint or constraint.startswith('#'):
+                continue
+            constraints.append(constraint)
+    constraints += additional_constraints
+    constraints_path = os.path.join(
+        ctx.instance.runtime_properties['virtualenv_location'],
+        'constraints.txt')
+    with open(constraints_path, 'w') as f:
+        f.write('\n'.join(constraints))
+
+
+@operation
 def configure_python_package_path(repo_location, base_package_path, **_):
     package_path = os.path.join(repo_location, base_package_path)
     ctx.source.instance.runtime_properties['package_path'] = package_path
@@ -141,7 +159,9 @@ def _add_requierment(package_path, instance):
 def pip_install(virtualenv_location, package_path, **_):
     pip = _sh(sh.Command(os.path.join(virtualenv_location, 'bin', 'pip')),
               ctx.logger)
-    pip.install(e=package_path).wait()
+    pip.install(
+        c=os.path.join(virtualenv_location, 'constraints.txt'),
+        e=package_path).wait()
 
 
 @operation
@@ -194,7 +214,9 @@ def install_packages(**_):
                                             suffix='.txt')
         with open(requirements_file, 'w') as f:
             f.write('\n'.join(requirements))
-        pip.install(requirement=requirements_file).wait()
+        pip.install(
+            requirement=requirements_file,
+            c=os.path.join(virtualenv_location, 'constraints.txt')).wait()
 
 
 @operation
