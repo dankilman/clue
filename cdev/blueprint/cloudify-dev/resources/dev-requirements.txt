@@ -10,9 +10,5 @@ nose
 nose-cov
 mock
 
-# so they get installed properly and with a valid version
-Flask-RESTful==0.2.5
-jinja2==2.7.2
-
 # for ctx proxy
 pyzmq
