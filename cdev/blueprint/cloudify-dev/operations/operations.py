@@ -95,24 +95,6 @@ def git_checkout(repo_type, branch, **_):
 
 
 @operation
-def configure_constraints(resource_path, additional_constraints, **_):
-    constraints = []
-    if resource_path:
-        raw_constraints = ctx.get_resource(resource_path)
-        for constraint in raw_constraints.splitlines():
-            constraint = constraint.strip()
-            if not constraint or constraint.startswith('#'):
-                continue
-            constraints.append(constraint)
-    constraints += additional_constraints
-    constraints_path = os.path.join(
-        ctx.instance.runtime_properties['virtualenv_location'],
-        'constraints.txt')
-    with open(constraints_path, 'w') as f:
-        f.write('\n'.join(constraints))
-
-
-@operation
 def configure_python_package_path(repo_location, base_package_path, **_):
     package_path = os.path.join(repo_location, base_package_path)
     ctx.source.instance.runtime_properties['package_path'] = package_path
@@ -220,16 +202,36 @@ def install_packages(**_):
 
 
 @operation
-def process_postactivate(
+def configure_virtualenv(
         virtualenv_location,
-        resource_path,
+        constraints_resource_path,
+        additional_constraints,
+        postactivate_resource_path,
         repositories_dir,
         register_python_argcomplete,
         **_):
+
+    # constraints.txt
+    constraints = []
+    if constraints_resource_path:
+        raw_constraints = ctx.get_resource(constraints_resource_path)
+        for constraint in raw_constraints.splitlines():
+            constraint = constraint.strip()
+            if not constraint or constraint.startswith('#'):
+                continue
+            constraints.append(constraint)
+    constraints += additional_constraints
+    constraints_path = os.path.join(
+        ctx.instance.runtime_properties['virtualenv_location'],
+        'constraints.txt')
+    with open(constraints_path, 'w') as f:
+        f.write('\n'.join(constraints))
+
+    # postactivate
     repositories_dir = os.path.expanduser(repositories_dir)
-    template = jinja2.Template(ctx.get_resource(resource_path))
+    postactivate_template = jinja2.Template(ctx.get_resource(postactivate_resource_path))
     variables = dict(
         repositories_dir=repositories_dir,
         register_python_argcomplete=register_python_argcomplete)
     with open(path(virtualenv_location) / 'bin' / 'postactivate', 'w') as f:
-        f.write(template.render(**variables))
+        f.write(postactivate_template.render(**variables))

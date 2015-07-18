@@ -149,11 +149,6 @@ node_types:
       name:
         description: the virtualenv name
         default: env
-      constraints:
-        description: virtualenv global constraints
-        default:
-          resource_path: ''
-          additional_constraints: []
     interfaces:
       cloudify.interfaces.lifecycle:
         create:
@@ -165,15 +160,6 @@ node_types:
                   operation: mkvirtualenv
                   virtualenvwrapper_path: { get_input: virtualenvwrapper_path }
                   virtualenv_name: { get_property: [SELF, name] }
-        # TODO combine process_post_activate with this logic so they both happen
-        # in configure
-        start:
-          implementation: self.operations.operations.configure_constraints
-          inputs:
-            resource_path:
-              default: { get_property: [SELF, constraints, resource_path] }
-            additional_constraints:
-              default: { get_property: [SELF, constraints, additional_constraints] }
 
   python_package:
     derived_from: cloudify.nodes.Root
@@ -256,15 +242,14 @@ node_templates:
     type: virtualenv
     properties:
       name: { get_input: virtualenv_name }
-      constraints:
-        resource_path: resources/constraints.txt
-        additional_constraints: { get_input: constraints }
     interfaces:
       cloudify.interfaces.lifecycle:
         configure:
-          implementation: self.operations.operations.process_postactivate
+          implementation: self.operations.operations.configure_virtualenv
           inputs:
-            resource_path: resources/postactivate
+            constraints_resource_path: resources/constraints.txt
+            additional_constraints: { get_input: constraints }
+            postactivate_resource_path: resources/postactivate
             repositories_dir: { get_property: [workdir, location] }
             virtualenv_location: { get_attribute: [SELF, virtualenv_location] }
             register_python_argcomplete: { get_input: register_python_argcomplete }
