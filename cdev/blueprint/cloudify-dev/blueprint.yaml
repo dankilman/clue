@@ -349,7 +349,6 @@ node_templates:
     type: git_repo
     properties:
       name: system-tests-launcher
-      branch: gh-pages
       repo_type: misc
     relationships:
       - target: workdir
@@ -508,6 +507,24 @@ node_templates:
       - target: workdir
         type: cloudify.relationships.depends_on
 
+  docs_getcloudify_repo:
+    type: git_repo
+    properties:
+      name: docs.getcloudify.org
+      repo_type: misc
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
+  docs_getcloudify_site_repo:
+    type: git_repo
+    properties:
+      name: docs.getcloudify.org-site
+      repo_type: misc
+    relationships:
+      - target: workdir
+        type: cloudify.relationships.depends_on
+
   flask_securest_repo:
     type: git_repo
     properties:
@@ -559,58 +576,6 @@ node_templates:
     properties:
       name: cloudify-workflows
       path: workflows
-    relationships:
-      - target: plugins_common_package
-        type: package_depends_on_package
-      - target: manager_repo
-        type: package_depends_on_repo
-      - target: virtualenv
-        type: package_depends_on_virtualenv
-
-  agent_installer_package:
-    type: python_package
-    properties:
-      name: cloudify-agent-installer-plugin
-      path: plugins/agent-installer
-    relationships:
-      - target: plugins_common_package
-        type: package_depends_on_package
-      - target: manager_repo
-        type: package_depends_on_repo
-      - target: virtualenv
-        type: package_depends_on_virtualenv
-
-  windows_agent_installer_package:
-    type: python_package
-    properties:
-      name: cloudify-windows-agent-installer-plugin
-      path: plugins/windows-agent-installer
-    relationships:
-      - target: plugins_common_package
-        type: package_depends_on_package
-      - target: manager_repo
-        type: package_depends_on_repo
-      - target: virtualenv
-        type: package_depends_on_virtualenv
-
-  plugin_installer_package:
-    type: python_package
-    properties:
-      name: cloudify-plugin-installer-plugin
-      path: plugins/plugin-installer
-    relationships:
-      - target: plugins_common_package
-        type: package_depends_on_package
-      - target: manager_repo
-        type: package_depends_on_repo
-      - target: virtualenv
-        type: package_depends_on_virtualenv
-
-  windows_plugin_installer_package:
-    type: python_package
-    properties:
-      name: cloudify-windows-plugin-installer-plugin
-      path: plugins/windows-plugin-installer
     relationships:
       - target: plugins_common_package
         type: package_depends_on_package
@@ -919,17 +884,9 @@ node_templates:
         type: cloudify.relationships.depends_on
       - target: workflows_package
         type: cloudify.relationships.depends_on
-      - target: agent_installer_package
-        type: cloudify.relationships.depends_on
-      - target: plugin_installer_package
-        type: cloudify.relationships.depends_on
       - target: riemann_controller_package
         type: cloudify.relationships.depends_on
       - target: manager_tests_package
-        type: cloudify.relationships.depends_on
-      - target: windows_agent_installer_package
-        type: cloudify.relationships.depends_on
-      - target: windows_plugin_installer_package
         type: cloudify.relationships.depends_on
       - target: cli_package
         type: cloudify.relationships.depends_on
