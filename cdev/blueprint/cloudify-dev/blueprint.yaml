@@ -36,6 +36,10 @@ inputs:
     description: >
       additional constraints
     default: []
+  git_config:
+    description: >
+      git config to apply to all repos
+    default: {}
 
 
 relationships:
@@ -104,6 +108,8 @@ node_types:
         description: >
           One of: core, plugin, misc. Used by git checkout to figure out
           build branch names.
+      git_config:
+        default: { get_input: git_config }
     interfaces:
       cloudify.interfaces.lifecycle:
         create:
@@ -118,10 +124,12 @@ node_types:
             branch:
               default: { get_property: [SELF, branch] }
         configure:
-          implementation: self.operations.operations.git_install_commit_msg_hook
+          implementation: self.operations.operations.git_configure
           inputs:
-            resource_path:
+            commit_msg_resource_path:
               default: resources/commit-msg
+            git_config:
+              default: { get_property: [SELF, git_config] }
       git:
         pull:
           implementation: self.operations.operations.git_pull

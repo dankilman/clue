@@ -45,16 +45,24 @@ def git_clone(location, organization, repo, branch, **_):
 
 
 @operation
-def git_install_commit_msg_hook(resource_path, **_):
+def git_configure(commit_msg_resource_path, git_config, **_):
     repo_location = path(ctx.instance.runtime_properties['repo_location'])
+
+    # configure commit-msg hook
     commit_msg_hook_path = repo_location / '.git' / 'hooks' / 'commit-msg'
     if commit_msg_hook_path.exists():
         ctx.logger.warn('{} already exits, skipping hook installation.'
                         .format(commit_msg_hook_path))
-    commit_msg_hook = ctx.get_resource(resource_path)
-    with open(commit_msg_hook_path, 'w') as f:
-        f.write(commit_msg_hook)
-    os.chmod(commit_msg_hook_path, 0755)
+    else:
+        commit_msg_hook = ctx.get_resource(commit_msg_resource_path)
+        with open(commit_msg_hook_path, 'w') as f:
+            f.write(commit_msg_hook)
+        os.chmod(commit_msg_hook_path, 0755)
+
+    # git config
+    git = _git()
+    for key, value in git_config.items():
+        git.config(key, value).wait()
 
 
 @operation
