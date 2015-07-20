@@ -1,5 +1,6 @@
 import tempfile
 import os
+import json
 
 import sh
 import networkx as nx
@@ -243,3 +244,29 @@ def configure_virtualenv(
         register_python_argcomplete=register_python_argcomplete)
     with open(path(virtualenv_location) / 'bin' / 'postactivate', 'w') as f:
         f.write(postactivate_template.render(**variables))
+
+
+@operation
+def configure_docs_getcloudify_source(docs_getcloudify_repo_location, **_):
+    repo_location = path(ctx.source.instance.runtime_properties['repo_location'])
+    dev_directory = repo_location / 'dev'
+    config_path = dev_directory / 'config.json'
+    node_modules_path = repo_location / 'node_modules'
+    bower_components_path = repo_location / 'static' / 'bower_components'
+
+    if not dev_directory.exists():
+        dev_directory.mkdir()
+
+    config_path.write_text(json.dumps({
+        'content': {
+            'root': docs_getcloudify_repo_location
+        }
+    }))
+
+    with repo_location:
+        if not node_modules_path.exists():
+            npm = _sh(sh.npm, ctx.logger)
+            npm.install().wait()
+        if not bower_components_path.exists():
+            bower = _sh(sh.bower, ctx.logger)
+            bower.install().wait()

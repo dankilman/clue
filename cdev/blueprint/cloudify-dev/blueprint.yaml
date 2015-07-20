@@ -532,6 +532,14 @@ node_templates:
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
+      - target: docs_getcloudify_repo
+        type: cloudify.relationships.depends_on
+        source_interfaces:
+          cloudify.interfaces.relationship_lifecycle:
+            postconfigure:
+              implementation: self.operations.operations.configure_docs_getcloudify_source
+              inputs:
+                docs_getcloudify_repo_location: { get_attribute: [TARGET, repo_location] }
 
   flask_securest_repo:
     type: git_repo
