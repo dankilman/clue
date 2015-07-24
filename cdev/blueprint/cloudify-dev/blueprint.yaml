@@ -49,7 +49,7 @@ relationships:
     source_interfaces:
       cloudify.interfaces.relationship_lifecycle:
         preconfigure:
-          implementation: self.operations.operations.configure_python_package_path
+          implementation: self.operations.pip.configure_python_package_path
           inputs:
             repo_location:
               default: { get_attribute: [TARGET, repo_location] }
@@ -61,7 +61,7 @@ relationships:
     source_interfaces:
       cloudify.interfaces.relationship_lifecycle:
         preconfigure:
-          implementation: self.operations.operations.configure_virtualenv_location
+          implementation: self.operations.pip.configure_virtualenv_location
           inputs:
             virtualenv_location:
               default: { get_attribute: [TARGET, virtualenv_location] }
@@ -71,7 +71,7 @@ relationships:
     source_interfaces:
       cloudify.interfaces.relationship_lifecycle:
         preconfigure:
-          implementation: self.operations.operations.configure_package_dependency
+          implementation: self.operations.pip.configure_package_dependency
           inputs:
             target_package_path:
               default: { get_attribute: [TARGET, package_path] }
@@ -113,7 +113,7 @@ node_types:
     interfaces:
       cloudify.interfaces.lifecycle:
         create:
-          implementation: self.operations.operations.git_clone
+          implementation: self.operations.git.clone
           inputs:
             location:
               default: { get_property: [SELF, location] }
@@ -124,7 +124,7 @@ node_types:
             branch:
               default: { get_property: [SELF, branch] }
         configure:
-          implementation: self.operations.operations.git_configure
+          implementation: self.operations.git.configure
           inputs:
             commit_msg_resource_path:
               default: resources/commit-msg
@@ -132,13 +132,13 @@ node_types:
               default: { get_property: [SELF, git_config] }
       git:
         pull:
-          implementation: self.operations.operations.git_pull
+          implementation: self.operations.git.pull
           inputs: {}
         status:
-          implementation: self.operations.operations.git_status
+          implementation: self.operations.git.status
           inputs: {}
         checkout:
-          implementation: self.operations.operations.git_checkout
+          implementation: self.operations.git.checkout
           inputs:
             repo_type:
               default: { get_property: [SELF, repo_type ] }
@@ -185,13 +185,13 @@ node_types:
     interfaces:
       cloudify.interfaces.lifecycle:
         configure:
-          implementation: self.operations.operations.add_self_requirement
+          implementation: self.operations.pip.add_self_requirement
           inputs:
             package_path:
               default: { get_attribute: [SELF, package_path] }
       pip:
         install:
-          implementation: self.operations.operations.pip_install
+          implementation: self.operations.pip.install
           inputs:
             virtualenv_location:
               default: { get_attribute: [SELF, virtualenv_location] }
@@ -219,7 +219,7 @@ node_types:
     interfaces:
       cloudify.interfaces.lifecycle:
         start:
-          implementation: self.operations.operations.add_additional_requirements
+          implementation: self.operations.pip.add_additional_requirements
           inputs:
             requirements:
               default: { get_property: [SELF, requirements] }
@@ -231,7 +231,7 @@ node_types:
     interfaces:
       cloudify.interfaces.lifecycle:
         start:
-          implementation: self.operations.operations.install_packages
+          implementation: self.operations.pip.install_packages
           inputs: {}
 
 node_templates:
@@ -253,7 +253,7 @@ node_templates:
     interfaces:
       cloudify.interfaces.lifecycle:
         configure:
-          implementation: self.operations.operations.configure_virtualenv
+          implementation: self.operations.pip.configure_virtualenv
           inputs:
             constraints_resource_path: resources/constraints.txt
             additional_constraints: { get_input: constraints }
