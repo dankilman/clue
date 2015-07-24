@@ -11,6 +11,7 @@ from cloudify.decorators import operation
 
 from common import bake
 
+
 @operation
 def configure_python_package_path(repo_location, base_package_path, **_):
     package_path = os.path.join(repo_location, base_package_path)

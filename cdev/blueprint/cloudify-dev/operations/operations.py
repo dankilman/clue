@@ -10,6 +10,7 @@ from cloudify import exceptions
 
 from common import bake
 
+
 @operation
 def makedirs(location, **_):
     location = os.path.expanduser(location)

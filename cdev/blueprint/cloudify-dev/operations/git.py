@@ -10,11 +10,13 @@ from cloudify.decorators import operation
 
 from common import bake
 
+
 def _git():
     repo_location = ctx.instance.runtime_properties['repo_location']
     return bake(sh.git).bake(
         '--git-dir', path(repo_location) / '.git',
         '--work-tree', repo_location)
+
 
 @operation
 def clone(location, organization, repo, branch, **_):
