@@ -563,7 +563,7 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-agent-packager
-      repo_type: core
+      repo_type: misc
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
