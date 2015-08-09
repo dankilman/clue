@@ -35,6 +35,7 @@ commands:
       args:
         - name: branch
           help: branch name to checkout
+          completer: cdev.completion:branches_completer
       workflow: execute_operation
       parameters:
         allow_kwargs_override: true

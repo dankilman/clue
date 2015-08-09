@@ -69,6 +69,9 @@ def status(**_):
 def checkout(repo_type, branch, **_):
     git = _git()
     branches_file_path = os.path.expanduser(branch)
+    if not os.path.exists(branches_file_path):
+        branches_dir = os.path.expanduser(ctx.node.properties['branches_dir'])
+        branches_file_path = os.path.join(branches_dir, branch)
     if os.path.exists(branches_file_path):
         with open(branches_file_path) as f:
             branches = yaml.safe_load(f.read())

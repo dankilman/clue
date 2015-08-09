@@ -15,6 +15,8 @@ inputs:
     default: env
   workdir:
     description: working directory to install things in
+  branches_dir:
+    description: directory that contains branches yaml files for 'git checkout'
   default_branch:
     description: default repositories branch
     default: master
@@ -102,6 +104,9 @@ node_types:
       branch:
         description: the repo branch
         default: { get_input: default_branch }
+      branches_dir:
+        description: directory with branches yaml files
+        default: { get_input: branches_dir }
       location:
         default: { get_input: workdir }
       repo_type:
@@ -149,7 +154,8 @@ node_types:
                 treated as a core/plugin checkout and a version prefix will be attached
                 according to the repo_type.
                 A path to a yaml mapping file can also be supplied, in which
-                case only if there is a mapping for the specified repo
+                case only if there is a mapping for the specified repo,
+                the path can also be relative to branches dir.
 
   virtualenv:
     derived_from: cloudify.nodes.Root
