@@ -10,4 +10,5 @@ def branches_completer(env, prefix, **kwargs):
     if not branches_dir:
         return []
     import os
-    return os.listdir(os.path.expanduser(branches_dir))
+    return (f for f in os.listdir(os.path.expanduser(branches_dir))
+            if f.startswith(prefix))
