@@ -25,6 +25,23 @@ commands:
       parameters:
         operation: git.status
         type_names: [git_repo]
+
+    diff:
+      args:
+        - name: revision_range
+          help: range to pass to git diff
+      task:
+        retries: 0
+        retry_interval: 0
+        thread_pool_size: 1
+      workflow: execute_operation
+      parameters:
+        operation: git.diff
+        type_names: [git_repo]
+        allow_kwargs_override: true
+        operation_kwargs:
+          revision_range: { arg: revision_range }
+
     pull:
       workflow: execute_operation
       parameters:

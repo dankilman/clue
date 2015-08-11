@@ -14,6 +14,7 @@ from common import bake
 def _git():
     repo_location = ctx.instance.runtime_properties['repo_location']
     return bake(sh.git).bake(
+        '--no-pager',
         '--git-dir', path(repo_location) / '.git',
         '--work-tree', repo_location)
 
@@ -87,9 +88,33 @@ def checkout(repo_type, branch, **_):
     elif not branch:
         raise exceptions.NonRecoverableError('Branch is not defined')
     elif branch.startswith('.'):
-        template = '3{}' if repo_type == 'core' else '1{}'
-        branch = template.format(branch)
+        branch = _fix_branch_name(repo_type, branch)
     try:
         git.checkout(branch).wait()
     except sh.ErrorReturnCode:
         ctx.logger.error('Could not checkout branch {0}'.format(branch))
+
+
+@operation
+def diff(repo_type, revision_range, **_):
+    if repo_type not in ['core', 'plugin']:
+        return
+    split_range = revision_range.split('..')
+    if len(split_range) != 2:
+        ctx.logger.error('Invalid range supplied: {0}'.format(revision_range))
+        return
+    left = _fix_branch_name(repo_type, split_range[0])
+    right = _fix_branch_name(repo_type, split_range[1])
+    diff_range = '{0}..{1}'.format(left, right)
+    try:
+        git = _git()
+        git.diff(diff_range).wait()
+    except sh.ErrorReturnCode:
+        ctx.logger.error('{0} diff failed'.format(diff_range))
+
+
+def _fix_branch_name(repo_type, branch):
+    if not branch.startswith('.'):
+        return branch
+    template = '3{}' if repo_type == 'core' else '1{}'
+    return template.format(branch)
