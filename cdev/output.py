@@ -2,6 +2,7 @@ import colors
 
 from workflowcmd.output import Event
 
+
 class GitStatusEvent(object):
 
     @staticmethod
