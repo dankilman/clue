@@ -78,3 +78,4 @@ commands:
     parameters:
       operation: nose.run
       node_ids: [{ arg: package }]
+    event_cls: cdev.output:NoseEvent
