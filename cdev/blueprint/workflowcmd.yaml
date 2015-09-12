@@ -29,6 +29,7 @@ commands:
       parameters:
         operation: git.status
         type_names: [git_repo]
+      event_cls: cdev.output:GitStatusEvent
 
     diff:
       args:
