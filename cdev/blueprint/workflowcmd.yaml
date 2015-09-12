@@ -3,7 +3,7 @@ task:
   retry_interval: 1
   thread_pool_size: 20
 
-ignored_moudles:
+ignored_modules:
   - cloudify_agent.operations
   - cloudify_agent.installer.operations
 
