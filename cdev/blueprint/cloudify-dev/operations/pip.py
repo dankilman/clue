@@ -131,10 +131,11 @@ def configure_virtualenv(
 
     # postactivate
     repositories_dir = os.path.expanduser(repositories_dir)
-    postactivate_template = jinja2.Template(
-        ctx.get_resource(postactivate_resource_path))
     variables = dict(
         repositories_dir=repositories_dir,
         register_python_argcomplete=register_python_argcomplete)
     with open(path(virtualenv_location) / 'bin' / 'postactivate', 'w') as f:
-        f.write(postactivate_template.render(**variables))
+        postactivate = ctx.get_resource_and_render(
+            postactivate_resource_path,
+            template_variables=variables)
+        f.write(postactivate)
