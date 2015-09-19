@@ -109,6 +109,7 @@ def configure_virtualenv(
         constraints_resource_path,
         additional_constraints,
         postactivate_resource_path,
+        git_retag_cloudify_resource_path,
         repositories_dir,
         register_python_argcomplete,
         **_):
@@ -129,13 +130,21 @@ def configure_virtualenv(
     with open(constraints_path, 'w') as f:
         f.write('\n'.join(constraints))
 
+    virtualenv_bin = path(virtualenv_location) / 'bin'
+
     # postactivate
     repositories_dir = os.path.expanduser(repositories_dir)
     variables = dict(
         repositories_dir=repositories_dir,
         register_python_argcomplete=register_python_argcomplete)
-    with open(path(virtualenv_location) / 'bin' / 'postactivate', 'w') as f:
-        postactivate = ctx.get_resource_and_render(
-            postactivate_resource_path,
-            template_variables=variables)
-        f.write(postactivate)
+    ctx.download_resource_and_render(
+        postactivate_resource_path,
+        target_path=virtualenv_bin / 'postactivate',
+        template_variables=variables)
+
+    # git-retag-cloudify
+    retag_cloudify_target_path = virtualenv_bin / 'git-retag-cloudify'
+    ctx.download_resource(
+        git_retag_cloudify_resource_path,
+        target_path=retag_cloudify_target_path)
+    os.chmod(retag_cloudify_target_path, 0755)

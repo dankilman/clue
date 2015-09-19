@@ -1,0 +1,39 @@
+#!/bin/python
+
+import re
+import subprocess
+import sys
+
+CURRENT_BRANCH_CMD  = 'git symbolic-ref --short HEAD'
+TAG_CMD             = 'git tag -f {0}'
+PUSH_TAG_DELETE_CMD = 'git push origin :{0}'
+PUSH_TAG_CREATE_CMD = 'git push origin {0}'
+
+BUILD_BRANCH_REGEX = '(.+)-build'
+
+
+def _run(cmd, output=False):
+    split_cmd = cmd.split(' ')
+    try:
+        if output:
+            return subprocess.check_output(split_cmd).decode('utf-8').strip()
+        else:
+            subprocess.check_call(split_cmd)
+    except:
+        sys.exit('error: failed running: {0}'.format(cmd))
+
+
+def retag():
+    branch_name = _run(CURRENT_BRANCH_CMD, output=True)
+    match = re.match(BUILD_BRANCH_REGEX, branch_name)
+    if match:
+        tag = match.group(1)
+        _run(TAG_CMD.format(tag))
+        _run(PUSH_TAG_DELETE_CMD.format(tag))
+        _run(PUSH_TAG_CREATE_CMD.format(tag))
+    else:
+        sys.exit('error: {0} is not a build branch'.format(branch_name))
+
+
+if __name__ == '__main__':
+    retag()
