@@ -511,15 +511,6 @@ node_templates:
       - target: workdir
         type: cloudify.relationships.depends_on
 
-  cli_packager_repo:
-    type: git_repo
-    properties:
-      name: cloudify-cli-packager
-      repo_type: core
-    relationships:
-      - target: workdir
-        type: cloudify.relationships.depends_on
-
   getcloudify_repo:
     type: git_repo
     properties:
