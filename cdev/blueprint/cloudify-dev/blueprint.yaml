@@ -367,24 +367,6 @@ node_templates:
       - target: workdir
         type: cloudify.relationships.depends_on
 
-  system_tests_launcher_repo:
-    type: git_repo
-    properties:
-      name: system-tests-launcher
-      repo_type: misc
-    relationships:
-      - target: workdir
-        type: cloudify.relationships.depends_on
-
-  cli_fabric_tasks_repo:
-    type: git_repo
-    properties:
-      name: cloudify-cli-fabric-tasks
-      repo_type: misc
-    relationships:
-      - target: workdir
-        type: cloudify.relationships.depends_on
-
   docker_plugin_repo:
     type: git_repo
     properties:
@@ -416,24 +398,6 @@ node_templates:
     type: git_repo
     properties:
       name: cloudify-fabric-plugin
-      repo_type: plugin
-    relationships:
-      - target: workdir
-        type: cloudify.relationships.depends_on
-
-  vsphere_plugin_repo:
-    type: git_repo
-    properties:
-      name: cloudify-vsphere-plugin
-      repo_type: plugin
-    relationships:
-      - target: workdir
-        type: cloudify.relationships.depends_on
-
-  softlayer_plugin_repo:
-    type: git_repo
-    properties:
-      name: cloudify-softlayer-plugin
       repo_type: plugin
     relationships:
       - target: workdir
@@ -507,15 +471,6 @@ node_templates:
     properties:
       name: cloudify-packager
       repo_type: core
-    relationships:
-      - target: workdir
-        type: cloudify.relationships.depends_on
-
-  getcloudify_repo:
-    type: git_repo
-    properties:
-      name: getcloudify.org
-      repo_type: misc
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
@@ -749,30 +704,6 @@ node_templates:
       - target: virtualenv
         type: package_depends_on_virtualenv
 
-  vsphere_plugin_package:
-    type: python_package
-    properties:
-      name: cloudify-vsphere-plugin
-    relationships:
-      - target: plugins_common_package
-        type: package_depends_on_package
-      - target: vsphere_plugin_repo
-        type: package_depends_on_repo
-      - target: virtualenv
-        type: package_depends_on_virtualenv
-
-  softlayer_plugin_package:
-    type: python_package
-    properties:
-      name: cloudify-softlayer-plugin
-    relationships:
-      - target: plugins_common_package
-        type: package_depends_on_package
-      - target: softlayer_plugin_repo
-        type: package_depends_on_repo
-      - target: virtualenv
-        type: package_depends_on_virtualenv
-
   chef_plugin_package:
     type: python_package
     properties:
@@ -936,10 +867,6 @@ node_templates:
       - target: chef_plugin_package
         type: cloudify.relationships.depends_on
       - target: puppet_plugin_package
-        type: cloudify.relationships.depends_on
-      - target: vsphere_plugin_package
-        type: cloudify.relationships.depends_on
-      - target: softlayer_plugin_package
         type: cloudify.relationships.depends_on
       - target: agent_package
         type: cloudify.relationships.depends_on
