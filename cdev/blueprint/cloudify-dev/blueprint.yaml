@@ -802,9 +802,9 @@ node_templates:
       - target: virtualenv
         type: package_depends_on_virtualenv
 
-  #####################
+  ######################
   # additional packages
-  #####################
+  ######################
 
   requirements:
     type: requirements
@@ -815,9 +815,9 @@ node_templates:
       - target: virtualenv
         type: package_depends_on_virtualenv
 
-  #####################
+  ############################
   # python package installers
-  #####################
+  ############################
 
   package_installer1:
     type: package_installer
