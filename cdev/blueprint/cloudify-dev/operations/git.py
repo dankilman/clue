@@ -77,9 +77,10 @@ def checkout(repo_type, branch, **_):
         with open(branches_file_path) as f:
             branches = yaml.safe_load(f.read())
         name = ctx.node.properties['name']
-        if name not in branches:
-            return
-        branch = branches[name]
+        if name in branches:
+            branch = branches[name]
+        else:
+            branch = ctx.node.properties['branch']
     elif repo_type == 'misc':
         return
     elif repo_type not in ['core', 'plugin']:
