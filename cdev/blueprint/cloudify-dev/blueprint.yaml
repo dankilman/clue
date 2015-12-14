@@ -357,16 +357,6 @@ node_templates:
       - target: workdir
         type: cloudify.relationships.depends_on
 
-  build_dashboard_repo:
-    type: git_repo
-    properties:
-      name: cloudify-build-dashboard
-      branch: gh-pages
-      repo_type: misc
-    relationships:
-      - target: workdir
-        type: cloudify.relationships.depends_on
-
   docker_plugin_repo:
     type: git_repo
     properties:
