@@ -1,11 +1,5 @@
-task:
-  retries: 5
-  retry_interval: 1
-  thread_pool_size: 20
+blueprint_path: cloudify-dev/blueprint.yaml
 
-ignored_modules:
-  - cloudify_agent.operations
-  - cloudify_agent.installer.operations
 
 commands:
   install:
@@ -79,3 +73,12 @@ commands:
       operation: nose.run
       node_ids: [{ arg: package }]
     event_cls: cdev.output:NoseEvent
+
+ignored_modules:
+  - cloudify_agent.operations
+  - cloudify_agent.installer.operations
+
+task:
+  retries: 5
+  retry_interval: 1
+  thread_pool_size: 20
