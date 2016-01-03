@@ -1,5 +1,14 @@
 blueprint_path: cloudify-dev/blueprint.yaml
 
+setup:
+  args:
+    - name: [-w, --workdir]
+      help: where to clone stuff to
+      required: true
+  inputs:
+    workdir: { arg: workdir }
+    branches_dir: { concat: [{ loader: storage_dir }, '/branches'] }
+  after_setup: cdev.hooks:after_setup
 
 commands:
   install:

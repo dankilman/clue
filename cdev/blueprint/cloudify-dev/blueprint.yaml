@@ -31,16 +31,13 @@ inputs:
       postactivate. (cfy and cdev are always registered)
     default: []
   requirements:
-    description: >
-      additional requirements to install in virtualenv
+    description: additional requirements to install in virtualenv
     default: []
   constraints:
-    description: >
-      additional constraints
+    description: additional constraints
     default: []
   git_config:
-    description: >
-      git config to apply to all repos
+    description: git config to apply to all repos
     default: {}
 
 

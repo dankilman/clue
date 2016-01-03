@@ -3,7 +3,6 @@ import tempfile
 
 import sh
 import networkx
-import jinja2
 from path import path
 
 from cloudify import ctx
