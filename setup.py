@@ -14,6 +14,7 @@ setup(
         'Jinja2',
         'workflowcmd'
     ],
+    include_package_data=True,
     entry_points={
         'console_scripts': [
             'cdev = cdev:main',
