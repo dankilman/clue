@@ -64,10 +64,10 @@ def install(virtualenv_location, package_path, **_):
 
 @operation
 def install_packages(**_):
+    storage = ctx._endpoint.storage
     package_node_instance_ids = ctx.capabilities.get_all().keys()
-    package_node_instances = [
-        ctx._endpoint.storage.get_node_instance(instance_id)
-        for instance_id in package_node_instance_ids]
+    package_node_instances = [storage.get_node_instance(instance_id)
+                              for instance_id in package_node_instance_ids]
     package_node_instances = [
         instance for instance in package_node_instances
         if 'virtualenv_location' in instance.runtime_properties]
@@ -76,19 +76,19 @@ def install_packages(**_):
 
     for virtualenv_location in virtualenvs:
         pip = bake(sh.Command(os.path.join(virtualenv_location, 'bin', 'pip')))
-        virutalenv_package_instances = [
+        virtualenv_package_instances = [
             instance for instance in package_node_instances
             if instance.runtime_properties[
                 'virtualenv_location'] == virtualenv_location]
         graph = networkx.DiGraph()
-        for instance in virutalenv_package_instances:
+        for instance in virtualenv_package_instances:
             graph.add_node(instance.id)
             for relationship in instance.relationships:
                 graph.add_edge(instance.id, relationship['target_id'])
         topological_sort = networkx.topological_sort(graph.reverse())
         requirements = []
         for instance_id in topological_sort:
-            instance = ctx._endpoint.storage.get_node_instance(instance_id)
+            instance = storage.get_node_instance(instance_id)
             for requirement in instance.runtime_properties.get('requirements',
                                                                []):
                 if requirement not in requirements:
