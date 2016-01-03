@@ -12,7 +12,7 @@ setup(
         'sh',
         'path.py',
         'Jinja2',
-        'workflowcmd==0.1'
+        'workflowcmd'
     ],
     entry_points={
         'console_scripts': [
