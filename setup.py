@@ -12,7 +12,7 @@ setup(
         'sh',
         'path.py',
         'Jinja2',
-        'workflowcmd'
+        'workflowcmd==0.1'
     ],
     include_package_data=True,
     entry_points={
