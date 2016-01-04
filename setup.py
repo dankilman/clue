@@ -10,8 +10,6 @@ setup(
     zip_safe=False,
     install_requires=[
         'sh',
-        'path.py',
-        'Jinja2',
         'workflowcmd==0.1'
     ],
     include_package_data=True,
