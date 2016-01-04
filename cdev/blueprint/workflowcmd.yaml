@@ -1,3 +1,4 @@
+name: cdev
 blueprint_path: cloudify-dev/blueprint.yaml
 
 setup:
