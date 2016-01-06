@@ -14,15 +14,15 @@
 # limitations under the License.
 ############
 
-
-import sys
+import os
 
 import workflowcmd
 
 
 def main():
-    workflowcmd.dispatch(package=sys.modules[__name__],
-                         config_path='blueprint/workflowcmd.yaml')
+    workflowcmd.dispatch(config_path=os.path.join(os.path.dirname(__file__),
+                                                  'blueprint',
+                                                  'workflowcmd.yaml'))
 
 if __name__ == '__main__':
     main()

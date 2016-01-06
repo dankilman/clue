@@ -16,6 +16,7 @@
 
 name: cdev
 blueprint_path: cloudify-dev/blueprint.yaml
+user_config_path: { env: [CDEV_CONFIG_PATH, ~/.cdev] }
 
 setup:
   args:
