@@ -39,6 +39,7 @@ commands:
         operation: pip.install
         run_by_dependency_order: true
         type_names: [python_package]
+      event_cls: cdev.output:NamedNodeEvent
 
   git:
     status:
@@ -50,7 +51,7 @@ commands:
       parameters:
         operation: git.status
         type_names: [git_repo]
-      event_cls: cdev.output:GitStatusEvent
+      event_cls: cdev.output:NamedNodeEvent
 
     diff:
       args:
@@ -73,6 +74,7 @@ commands:
       parameters:
         operation: git.pull
         type_names: [git_repo]
+      event_cls: cdev.output:NamedNodeEvent
 
     checkout:
       args:
@@ -86,6 +88,7 @@ commands:
         operation_kwargs:
           branch: { arg: branch }
         type_names: [git_repo]
+      event_cls: cdev.output:NamedNodeEvent
 
   nose:
     args:

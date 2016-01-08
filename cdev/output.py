@@ -19,22 +19,22 @@ import colors
 from workflowcmd.output import Event
 
 
-class GitStatusEvent(object):
+class NamedNodeEvent(object):
 
     @staticmethod
     def factory(env, verbose):
-        class GitStatusEventImpl(Event):
+        class NamedNodeEventImpl(Event):
             def __str__(self):
                 if (not verbose and self.level and
-                        self.level.lower() == 'info' and
+                        self.level.lower() in ['info', 'warning'] and
                         self.node_name):
                     node = env.storage.get_node(self.node_name)
-                    repo = node.properties['name']
-                    repo = colors.green('{0:<30}'.format(repo))
-                    return ' {0}| {1}'.format(repo, self.message)
+                    name = node.properties['name']
+                    name = colors.green('{0:<30}'.format(name))
+                    return ' {0}| {1}'.format(name, self.message)
                 else:
-                    return super(GitStatusEventImpl, self).__str__()
-        return GitStatusEventImpl
+                    return super(NamedNodeEventImpl, self).__str__()
+        return NamedNodeEventImpl
 
 
 class NoseEvent(object):
