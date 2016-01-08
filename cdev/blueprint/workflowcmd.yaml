@@ -28,6 +28,12 @@ setup:
     branches_dir: { concat: [{ loader: storage_dir }, '/branches'] }
   after_setup: cdev.hooks:after_setup
 
+templates:
+  - &sequential_tasks
+    retries: 0
+    retry_interval: 0
+    thread_pool_size: 1
+
 commands:
   install:
     workflow: install
@@ -43,10 +49,7 @@ commands:
 
   git:
     status:
-      task:
-        retries: 0
-        retry_interval: 0
-        thread_pool_size: 1
+      task: *sequential_tasks
       workflow: execute_operation
       parameters:
         operation: git.status
@@ -57,10 +60,7 @@ commands:
       args:
         - name: revision_range
           help: range to pass to git diff
-      task:
-        retries: 0
-        retry_interval: 0
-        thread_pool_size: 1
+      task: *sequential_tasks
       workflow: execute_operation
       parameters:
         operation: git.diff
@@ -96,9 +96,7 @@ commands:
       - name: package
         help: name of python package to run nosetests on
         completer: cdev.completion:package_completer
-    task:
-      retries: 0
-      retry_interval: 0
+    task: *sequential_tasks
     workflow: execute_operation
     parameters:
       operation: nose.run
