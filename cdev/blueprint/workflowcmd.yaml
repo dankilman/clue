@@ -68,6 +68,7 @@ commands:
         allow_kwargs_override: true
         operation_kwargs:
           revision_range: { arg: revision_range }
+      event_cls: cdev.output:NamedNodeEvent
 
     pull:
       workflow: execute_operation

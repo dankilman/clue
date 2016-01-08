@@ -54,14 +54,10 @@ def configure(commit_msg_resource_path, git_config, **_):
 
     # configure commit-msg hook
     commit_msg_hook_path = repo_location / '.git' / 'hooks' / 'commit-msg'
-    if commit_msg_hook_path.exists():
-        ctx.logger.warn('{} already exits, skipping hook installation.'
-                        .format(commit_msg_hook_path))
-    else:
-        commit_msg_hook = ctx.get_resource(commit_msg_resource_path)
-        with open(commit_msg_hook_path, 'w') as f:
-            f.write(commit_msg_hook)
-        os.chmod(commit_msg_hook_path, 0755)
+    commit_msg_hook = ctx.get_resource(commit_msg_resource_path)
+    with open(commit_msg_hook_path, 'w') as f:
+        f.write(commit_msg_hook)
+    os.chmod(commit_msg_hook_path, 0755)
 
     # git config
     git = _git()
