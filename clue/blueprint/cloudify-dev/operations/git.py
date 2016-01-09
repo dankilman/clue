@@ -44,7 +44,7 @@ def clone(location, organization, repo, branch, clone_method, **_):
     if os.path.isdir(repo_location):
         return
     if clone_method == 'https':
-        clone_url = 'https://github.com/{}/{}.git'
+        clone_url = 'https://github.com/{}/{}.git'.format(organization, repo)
     elif clone_method == 'ssh':
         clone_url = 'git@github.com:{}/{}.git'.format(organization, repo)
     else:
