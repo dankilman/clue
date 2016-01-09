@@ -15,6 +15,7 @@
 ############
 
 import os
+import sys
 import tempfile
 
 import sh
@@ -146,6 +147,12 @@ def configure_virtualenv(
         f.write('\n'.join(constraints))
 
     virtualenv_bin = path(virtualenv_location) / 'bin'
+
+    # clue symlink
+    clue_source_path = path(sys.executable).dirname() / 'clue'
+    clue_target_path = virtualenv_bin / 'clue'
+    if not clue_target_path.exists():
+        os.symlink(clue_source_path, clue_target_path)
 
     # postactivate
     repositories_dir = os.path.expanduser(repositories_dir)
