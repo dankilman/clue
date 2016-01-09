@@ -17,6 +17,7 @@
 
 eval "$(register-python-argcomplete cfy)"
 eval "$(register-python-argcomplete clue)"
+eval "$(register-python-argcomplete claw)"
 {% for name in register_python_argcomplete %}
 eval "$(register-python-argcomplete {{name}})"
 {% endfor %}

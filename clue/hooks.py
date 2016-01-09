@@ -26,13 +26,15 @@ def before_init(blueprint, inputs, **kwargs):
     for repo_type, repos in repo_groups.items():
         for repo_name, repo in repos.items():
             repo_node_template_name = '{}-repo'.format(repo_name)
+            properties = repo.get('properties', {})
+            properties.update({
+                'name': repo_name,
+                'repo_type': repo_type
+            })
             node_templates.update({
                 repo_node_template_name: {
                     'type': 'git_repo',
-                    'properties': {
-                        'name': repo_name,
-                        'repo_type': repo_type
-                    },
+                    'properties': properties,
                     'relationships': [{
                         'target': 'repos_dir',
                         'type': 'cloudify.relationships.depends_on'

@@ -106,6 +106,12 @@ inputs:
           python:
             dependencies:
             - cloudify-agent
+        claw:
+          properties:
+            organization: dankilman
+          python:
+            dependencies:
+            - cloudify-system-tests
   virtualenv_name:
     description: The virtualenv name to pass to mkvirtualenv
     default: cloudify
@@ -124,7 +130,7 @@ inputs:
   register_python_argcomplete:
     description: >
       names to register with python arg-complete when on virtualenv
-      postactivate. (cfy and clue are always registered)
+      postactivate. (cfy, clue and claw are always registered)
     default: []
   requirements:
     description: additional requirements to install in virtualenv
