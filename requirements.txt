@@ -1,1 +1,1 @@
-https://github.com/dankilman/workflowcmd/archive/master.tar.gz#egg=workflowcmd==0.1
+https://github.com/dankilman/clash/archive/master.tar.gz#egg=clash==0.1

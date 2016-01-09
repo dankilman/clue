@@ -26,7 +26,7 @@ setup(
     zip_safe=False,
     install_requires=[
         'sh',
-        'workflowcmd==0.1'
+        'clash==0.1'
     ],
     include_package_data=True,
     entry_points={

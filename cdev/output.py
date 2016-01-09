@@ -16,7 +16,7 @@
 
 import colors
 
-from workflowcmd.output import Event
+from clash.output import Event
 
 
 class NamedNodeEvent(object):

@@ -16,13 +16,13 @@
 
 import os
 
-import workflowcmd
+import clash
 
 
 def main():
-    workflowcmd.dispatch(config_path=os.path.join(os.path.dirname(__file__),
-                                                  'blueprint',
-                                                  'workflowcmd.yaml'))
+    clash.dispatch(config_path=os.path.join(os.path.dirname(__file__),
+                                            'blueprint',
+                                            'clash.yaml'))
 
 if __name__ == '__main__':
     main()
