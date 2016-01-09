@@ -14,9 +14,9 @@
 # limitations under the License.
 ############
 
-name: cdev
+name: clue
 blueprint_path: cloudify-dev/blueprint.yaml
-user_config_path: { env: [CDEV_CONFIG_PATH, ~/.cdev] }
+user_config_path: { env: [CLUE_CONFIG_PATH, ~/.clue] }
 
 setup:
   args:
@@ -28,8 +28,8 @@ setup:
     branches_dir: { concat: [{ loader: storage_dir }, '/branches'] }
 
 hooks:
-  after_setup: cdev.hooks:after_setup
-  before_init: cdev.hooks:before_init
+  after_setup: clue.hooks:after_setup
+  before_init: clue.hooks:before_init
 
 templates:
   - &sequential_tasks
@@ -48,7 +48,7 @@ commands:
         operation: pip.install
         run_by_dependency_order: true
         type_names: [python_package]
-      event_cls: cdev.output:NamedNodeEvent
+      event_cls: clue.output:NamedNodeEvent
 
   git:
     status:
@@ -57,7 +57,7 @@ commands:
       parameters:
         operation: git.status
         type_names: [git_repo]
-      event_cls: cdev.output:NamedNodeEvent
+      event_cls: clue.output:NamedNodeEvent
 
     diff:
       args:
@@ -71,20 +71,20 @@ commands:
         allow_kwargs_override: true
         operation_kwargs:
           revision_range: { arg: revision_range }
-      event_cls: cdev.output:NamedNodeEvent
+      event_cls: clue.output:NamedNodeEvent
 
     pull:
       workflow: execute_operation
       parameters:
         operation: git.pull
         type_names: [git_repo]
-      event_cls: cdev.output:NamedNodeEvent
+      event_cls: clue.output:NamedNodeEvent
 
     checkout:
       args:
         - name: branch
           help: branch name to checkout
-          completer: cdev.completion:branches_completer
+          completer: clue.completion:branches_completer
       workflow: execute_operation
       parameters:
         allow_kwargs_override: true
@@ -92,19 +92,19 @@ commands:
         operation_kwargs:
           branch: { arg: branch }
         type_names: [git_repo]
-      event_cls: cdev.output:NamedNodeEvent
+      event_cls: clue.output:NamedNodeEvent
 
   nose:
     args:
       - name: package
         help: name of python package to run nosetests on
-        completer: cdev.completion:package_completer
+        completer: clue.completion:package_completer
     task: *sequential_tasks
     workflow: execute_operation
     parameters:
       operation: nose.run
       node_ids: [{ arg: package }]
-    event_cls: cdev.output:NoseEvent
+    event_cls: clue.output:NoseEvent
 
 ignored_modules:
   - cloudify_agent.operations

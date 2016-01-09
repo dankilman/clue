@@ -17,11 +17,11 @@
 from setuptools import setup
 
 setup(
-    name='cdev',
+    name='clue',
     version='0.1',
     author='GigaSpaces',
     author_email='cosmo-admin@gigaspaces.com',
-    packages=['cdev'],
+    packages=['clue'],
     description='Cloudify development environment CLI',
     zip_safe=False,
     install_requires=[
@@ -31,7 +31,7 @@ setup(
     include_package_data=True,
     entry_points={
         'console_scripts': [
-            'cdev = cdev:main',
+            'clue = clue:main',
         ]
     }
 )

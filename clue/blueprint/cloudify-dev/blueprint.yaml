@@ -121,7 +121,7 @@ inputs:
   register_python_argcomplete:
     description: >
       names to register with python arg-complete when on virtualenv
-      postactivate. (cfy and cdev are always registered)
+      postactivate. (cfy and clue are always registered)
     default: []
   requirements:
     description: additional requirements to install in virtualenv
