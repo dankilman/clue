@@ -1,1 +1,0 @@
-https://github.com/dankilman/clash/archive/master.tar.gz#egg=clash==0.1

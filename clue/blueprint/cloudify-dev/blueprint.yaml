@@ -111,6 +111,9 @@ inputs:
     default: cloudify
   repos_dir:
     description: directory to contain all closed repositories
+  clone_method:
+    description: clone github repos using ssh or https.
+    default: https
   branches_dir:
     description: directory that contains branches yaml files for 'git checkout'
   virtualenvwrapper_path:
@@ -156,6 +159,9 @@ node_types:
       organization:
         description: the github organization
         default: cloudify-cosmo
+      clone_method:
+        description: clone with https or ssh
+        default: { get_input: clone_method }
       branch:
         description: the repo branch
         default: master
@@ -183,6 +189,8 @@ node_types:
               default: { get_property: [SELF, name] }
             branch:
               default: { get_property: [SELF, branch] }
+            clone_method:
+              default: { get_property: [SELF, clone_method] }
         configure:
           implementation: self.operations.git.configure
           inputs:

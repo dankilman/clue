@@ -36,14 +36,21 @@ def _git():
 
 
 @operation
-def clone(location, organization, repo, branch, **_):
+def clone(location, organization, repo, branch, clone_method, **_):
     git = bake(sh.git)
     location = os.path.expanduser(location)
     repo_location = os.path.join(location, repo)
     ctx.instance.runtime_properties['repo_location'] = repo_location
     if os.path.isdir(repo_location):
         return
-    git.clone('git@github.com:{}/{}.git'.format(organization, repo),
+    if clone_method == 'https':
+        clone_url = 'https://github.com/{}/{}.git'
+    elif clone_method == 'ssh':
+        clone_url = 'git@github.com:{}/{}.git'.format(organization, repo)
+    else:
+        raise exceptions.NonRecoverableError('Illegal clone method: {0}'
+                                             .format(clone_method))
+    git.clone(clone_url,
               repo_location,
               '-b', branch).wait()
 
