@@ -34,7 +34,7 @@ def before_init(blueprint, inputs, **kwargs):
                         'repo_type': repo_type
                     },
                     'relationships': [{
-                        'target': 'workdir',
+                        'target': 'repos_dir',
                         'type': 'cloudify.relationships.depends_on'
                     }]
                 }

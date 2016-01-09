@@ -20,11 +20,11 @@ user_config_path: { env: [CDEV_CONFIG_PATH, ~/.cdev] }
 
 setup:
   args:
-    - name: [-w, --workdir]
+    - name: [-d, --repos-dir]
       help: where to clone stuff to
       required: true
   inputs:
-    workdir: { arg: workdir }
+    repos_dir: { arg: repos_dir }
     branches_dir: { concat: [{ loader: storage_dir }, '/branches'] }
 
 hooks:

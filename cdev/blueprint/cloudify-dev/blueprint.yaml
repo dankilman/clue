@@ -109,8 +109,8 @@ inputs:
   virtualenv_name:
     description: The virtualenv name to pass to mkvirtualenv
     default: cloudify
-  workdir:
-    description: working directory to install things in
+  repos_dir:
+    description: directory to contain all closed repositories
   branches_dir:
     description: directory that contains branches yaml files for 'git checkout'
   virtualenvwrapper_path:
@@ -163,7 +163,7 @@ node_types:
         description: directory with branches yaml files
         default: { get_input: branches_dir }
       location:
-        default: { get_input: workdir }
+        default: { get_input: repos_dir }
       repo_type:
         description: >
           One of: core, plugin, misc. Used by git checkout to figure out
@@ -349,10 +349,10 @@ relationships:
 
 node_templates:
 
-  workdir:
+  repos_dir:
     type: directory
     properties:
-      location: { get_input: workdir }
+      location: { get_input: repos_dir }
 
   virtualenv:
     type: virtualenv
@@ -367,11 +367,11 @@ node_templates:
             additional_constraints: { get_input: constraints }
             postactivate_resource_path: resources/postactivate
             git_retag_cloudify_resource_path: resources/git-retag-cloudify
-            repositories_dir: { get_property: [workdir, location] }
+            repositories_dir: { get_property: [repos_dir, location] }
             virtualenv_location: { get_attribute: [SELF, virtualenv_location] }
             register_python_argcomplete: { get_input: register_python_argcomplete }
     relationships:
-      - target: workdir
+      - target: repos_dir
         type: cloudify.relationships.depends_on
 
   requirements:
@@ -404,6 +404,6 @@ plugins:
 
 outputs:
   repositories:
-    value: { get_property: [workdir, location] }
+    value: { get_property: [repos_dir, location] }
   virtualenv:
     value: { get_attribute: [virtualenv, virtualenv_location] }
