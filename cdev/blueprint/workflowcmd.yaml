@@ -26,7 +26,10 @@ setup:
   inputs:
     workdir: { arg: workdir }
     branches_dir: { concat: [{ loader: storage_dir }, '/branches'] }
+
+hooks:
   after_setup: cdev.hooks:after_setup
+  before_init: cdev.hooks:before_init
 
 templates:
   - &sequential_tasks
