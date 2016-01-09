@@ -98,6 +98,10 @@ inputs:
         cloudify-aws-plugin: {}
       misc:
         flask-securest: {}
+        docs.getcloudify.org:
+          python: false
+        docs.getcloudify.org-site:
+          python: false
         cloudify-agent-packager:
           python:
             dependencies:
@@ -333,6 +337,16 @@ relationships:
             target_package_path:
               default: { get_attribute: [TARGET, package_path] }
 
+  docs_site_depends_on_docs:
+    derived_from: cloudify.relationships.depends_on
+    source_interfaces:
+      cloudify.interfaces.relationship_lifecycle:
+        postconfigure:
+          implementation: self.operations.operations.configure_docs_getcloudify_source
+          inputs:
+            docs_getcloudify_repo_location:
+              default: { get_attribute: [TARGET, repo_location] }
+
 node_templates:
 
   workdir:
@@ -359,32 +373,6 @@ node_templates:
     relationships:
       - target: workdir
         type: cloudify.relationships.depends_on
-
-  docs.getcloudify.org-repo:
-    type: git_repo
-    properties:
-      name: docs.getcloudify.org
-      repo_type: misc
-    relationships:
-      - target: workdir
-        type: cloudify.relationships.depends_on
-
-  docs.getcloudify.org-site-repo:
-    type: git_repo
-    properties:
-      name: docs.getcloudify.org-site
-      repo_type: misc
-    relationships:
-      - target: workdir
-        type: cloudify.relationships.depends_on
-      - target: docs.getcloudify.org-repo
-        type: cloudify.relationships.depends_on
-        source_interfaces:
-          cloudify.interfaces.relationship_lifecycle:
-            postconfigure:
-              implementation: self.operations.operations.configure_docs_getcloudify_source
-              inputs:
-                docs_getcloudify_repo_location: { get_attribute: [TARGET, repo_location] }
 
   requirements:
     type: requirements

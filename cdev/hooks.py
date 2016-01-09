@@ -87,3 +87,11 @@ def before_init(blueprint, inputs, **kwargs):
                 'target': node_template_name,
                 'type': 'cloudify.relationships.depends_on'
             })
+    docs = node_templates.get('docs.getcloudify.org-repo')
+    docs_site = node_templates.get('docs.getcloudify.org-site-repo')
+    if docs and docs_site:
+        relationships = docs_site['relationships']
+        relationships.append({
+            'target': 'docs.getcloudify.org-repo',
+            'type': 'docs_site_depends_on_docs'
+        })
