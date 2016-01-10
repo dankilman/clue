@@ -32,6 +32,8 @@ VIRTUALENVWRAPPER_VIRTUALENV = 'VIRTUALENVWRAPPER_VIRTUALENV'
 
 class BaseTest(unittest.TestCase):
 
+    verbose = True
+
     def setUp(self):
         self.workdir = path(tempfile.mkdtemp(prefix='clue-tests-'))
         self.clue_conf_path = self.workdir / 'clue_conf'
@@ -46,8 +48,10 @@ class BaseTest(unittest.TestCase):
         os.chdir(self.workdir)
         self.addCleanup(self.cleanup)
         self.clue = sh.clue
-        self.clue_out = self.clue.bake(_out=lambda l: sys.stdout.write(l),
-                                       _err=lambda l: sys.stderr.write(l))
+        if self.verbose:
+            self.clue = self.clue.bake(_out=lambda l: sys.stdout.write(l),
+                                       _err=lambda l: sys.stderr.write(l),
+                                       _tee=True)
 
     def cleanup(self):
         os.chdir(self.previous_dir)
@@ -86,4 +90,4 @@ class BaseTest(unittest.TestCase):
         })
         self.set_inputs(inputs)
         self.clue.init()
-        self.clue_out.install()
+        return self.clue.install()
