@@ -39,7 +39,7 @@ class BaseTest(unittest.TestCase):
         os.environ[WORKON_HOME] = self.workdir / 'virtualenvs'
         os.environ[VIRTUALENVWRAPPER_PYTHON] = sys.executable
         os.environ[VIRTUALENVWRAPPER_VIRTUALENV] = path(
-                sys.executable).dirname() / 'virtualenv'
+            sys.executable).dirname() / 'virtualenv'
         self.previous_dir = os.getcwd()
         os.chdir(self.workdir)
         self.addCleanup(self.cleanup)
