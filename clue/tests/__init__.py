@@ -24,7 +24,6 @@ import sh
 import yaml
 from path import path
 
-
 CLUE_CONFIG_PATH = 'CLUE_CONFIG_PATH'
 
 
@@ -57,3 +56,10 @@ class BaseTest(unittest.TestCase):
 
     def inputs(self):
         return yaml.safe_load((self.storage_dir() / 'inputs.yaml').text())
+
+    def set_inputs(self, inputs):
+        (self.storage_dir() / 'inputs.yaml').write_text(yaml.safe_dump(inputs))
+
+    def blueprint(self):
+        return yaml.safe_load((self.storage_dir() / '.local' / 'resources' /
+                               'blueprint.yaml').text())

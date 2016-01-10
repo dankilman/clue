@@ -51,9 +51,7 @@ def before_init(blueprint, inputs, **kwargs):
             elif isinstance(python, dict):
                 python = [python]
             for python_package in python:
-                package_name = python_package.get(
-                    'node_template_base_name',
-                    python_package.get('name', repo_name))
+                package_name = python_package.get('name', repo_name)
                 package_node_template_name = '{}-package'.format(package_name)
                 node_templates.update({
                     package_node_template_name: {

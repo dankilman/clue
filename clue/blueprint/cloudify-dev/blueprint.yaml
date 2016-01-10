@@ -60,8 +60,6 @@ inputs:
             - cloudify-rest-service
         cloudify-cli:
           python:
-            name: cloudify
-            node_template_base_name: cloudify-cli
             dependencies:
             - cloudify-dsl-parser
             - cloudify-rest-client

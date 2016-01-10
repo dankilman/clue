@@ -16,6 +16,7 @@
 
 import os
 
+import sh
 from path import path
 
 from clue import tests
@@ -36,14 +37,26 @@ class TestSetup(tests.BaseTest):
     def test_editable_true(self):
         self._test(editable=True)
 
+    def test_existing_no_reset(self):
+        self._test()
+        with self.assertRaises(sh.ErrorReturnCode) as c:
+            self._test()
+        self.assertIn('--reset to override', c.exception.stderr)
+
+    def test_existing_reset(self):
+        self._test()
+        self._test(reset=True)
+
     def _test(self,
               storage_dir=None,
               repos_dir=None,
-              editable=False):
+              editable=False,
+              reset=False):
         repos_dir = repos_dir or self.workdir
         kwargs = {
             'editable': editable,
-            'repos_dir': repos_dir
+            'repos_dir': repos_dir,
+            'reset': reset
         }
         if storage_dir:
             kwargs['storage_dir'] = storage_dir
