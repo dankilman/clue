@@ -37,8 +37,9 @@ class BaseTest(unittest.TestCase):
         self.clue_conf_path = self.workdir / 'clue_conf'
         os.environ[CLUE_CONFIG_PATH] = self.clue_conf_path
         os.environ[WORKON_HOME] = self.workdir / 'virtualenvs'
-        os.environ[VIRTUALENVWRAPPER_PYTHON] = '/usr/bin/python2'
-        os.environ[VIRTUALENVWRAPPER_VIRTUALENV] = '/usr/bin/virtualenv2'
+        os.environ[VIRTUALENVWRAPPER_PYTHON] = sys.executable
+        os.environ[VIRTUALENVWRAPPER_VIRTUALENV] = path(
+                sys.executable).dirname() / 'virtualenv'
         self.previous_dir = os.getcwd()
         os.chdir(self.workdir)
         self.addCleanup(self.cleanup)
