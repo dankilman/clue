@@ -18,7 +18,7 @@ from setuptools import setup
 
 setup(
     name='clue',
-    version='0.5',
+    version='0.6',
     author='GigaSpaces',
     author_email='cosmo-admin@gigaspaces.com',
     packages=['clue'],

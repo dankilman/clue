@@ -112,6 +112,10 @@ inputs:
           python:
             dependencies:
             - cloudify-system-tests
+        claw-scripts:
+          properties:
+            organization: dankilman
+          python: false
   virtualenv_name:
     description: The virtualenv name to pass to mkvirtualenv
     default: cloudify
