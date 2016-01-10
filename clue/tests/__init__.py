@@ -47,10 +47,9 @@ class BaseTest(unittest.TestCase):
         self.previous_dir = os.getcwd()
         os.chdir(self.workdir)
         self.addCleanup(self.cleanup)
-        self.clue = sh.clue
+        self.clue = sh.clue.bake(_err_to_out=True)
         if self.verbose:
             self.clue = self.clue.bake(_out=lambda l: sys.stdout.write(l),
-                                       _err=lambda l: sys.stderr.write(l),
                                        _tee=True)
 
     def cleanup(self):

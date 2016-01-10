@@ -41,7 +41,7 @@ class TestSetup(tests.BaseTest):
         self._test()
         with self.assertRaises(sh.ErrorReturnCode) as c:
             self._test()
-        self.assertIn('--reset to override', c.exception.stderr)
+        self.assertIn('--reset to override', c.exception.stdout)
 
     def test_existing_reset(self):
         self._test()
