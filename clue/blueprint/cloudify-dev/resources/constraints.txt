@@ -1,7 +1,0 @@
-requests==2.7.0
-Flask-RESTful==0.2.5
-jinja2==2.7.2
-six>=1.9.0
-pywinrm==0.0.3
-elasticsearch==1.6.0
-virtualenv>=13.1.2

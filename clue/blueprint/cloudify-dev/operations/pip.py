@@ -51,16 +51,8 @@ def add_self_requirement(package_path, **_):
 
 
 @operation
-def add_additional_requirements(
-        requirements_path,
-        requirements, **_):
-    raw_requirements = ctx.get_resource(requirements_path)
-    for req in raw_requirements.splitlines():
-        req = req.strip()
-        if not req or req.startswith('#'):
-            continue
-        requirements.append(req)
-    ctx.instance.runtime_properties['requirements'] = requirements
+def add_requirements(requirements, **_):
+    ctx.instance.runtime_properties['requirements'] = requirements or []
 
 
 def _add_requirement(package_path, instance):
@@ -122,8 +114,7 @@ def install_packages(**_):
 @operation
 def configure_virtualenv(
         virtualenv_location,
-        constraints_resource_path,
-        additional_constraints,
+        constraints,
         postactivate_resource_path,
         git_retag_cloudify_resource_path,
         repositories_dir,
@@ -131,15 +122,7 @@ def configure_virtualenv(
         **_):
 
     # constraints.txt
-    constraints = []
-    if constraints_resource_path:
-        raw_constraints = ctx.get_resource(constraints_resource_path)
-        for constraint in raw_constraints.splitlines():
-            constraint = constraint.strip()
-            if not constraint or constraint.startswith('#'):
-                continue
-            constraints.append(constraint)
-    constraints += additional_constraints
+    constraints = constraints or []
     constraints_path = os.path.join(
         ctx.instance.runtime_properties['virtualenv_location'],
         'constraints.txt')

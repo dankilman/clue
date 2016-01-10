@@ -130,14 +130,31 @@ inputs:
   register_python_argcomplete:
     description: >
       names to register with python arg-complete when on virtualenv
-      postactivate. (cfy, clue and claw are always registered)
-    default: []
+      postactivate.
+    default:
+    - cfy
+    - claw
+    - clue
   requirements:
-    description: additional requirements to install in virtualenv
-    default: []
+    description: requirements to install in virtualenv
+    default:
+    - tox
+    - testtools
+    - flake8
+    - nose
+    - nose-cov
+    - mock==1.0.1
+    - unittest2
   constraints:
-    description: additional constraints
-    default: []
+    description: constraints for all pip install commands
+    default:
+    - requests==2.7.0
+    - Flask-RESTful==0.2.5
+    - jinja2==2.7.2
+    - six>=1.9.0
+    - pywinrm==0.0.3
+    - elasticsearch==1.6.0
+    - virtualenv>=13.1.2
   git_config:
     description: git config to apply to all repos
     default: {}
@@ -293,21 +310,16 @@ node_types:
   requirements:
     derived_from: cloudify.nodes.Root
     properties:
-      path:
-        description: >
-          path to requirements file that should be installed
       requirements:
-        description: additional requirements that should get installed
+        description: requirements that should get installed
         default: []
     interfaces:
       cloudify.interfaces.lifecycle:
         start:
-          implementation: self.operations.pip.add_additional_requirements
+          implementation: self.operations.pip.add_requirements
           inputs:
             requirements:
               default: { get_property: [SELF, requirements] }
-            requirements_path:
-              default: { get_property: [SELF, path] }
 
   package_installer:
     derived_from: cloudify.nodes.Root
@@ -377,8 +389,7 @@ node_templates:
         configure:
           implementation: self.operations.pip.configure_virtualenv
           inputs:
-            constraints_resource_path: resources/constraints.txt
-            additional_constraints: { get_input: constraints }
+            constraints: { get_input: constraints }
             postactivate_resource_path: resources/postactivate
             git_retag_cloudify_resource_path: resources/git-retag-cloudify
             repositories_dir: { get_property: [repos_dir, location] }
@@ -391,7 +402,6 @@ node_templates:
   requirements:
     type: requirements
     properties:
-      path: resources/dev-requirements.txt
       requirements: { get_input: requirements }
     relationships:
       - target: virtualenv
