@@ -25,6 +25,9 @@ import yaml
 from path import path
 
 CLUE_CONFIG_PATH = 'CLUE_CONFIG_PATH'
+WORKON_HOME = 'WORKON_HOME'
+VIRTUALENVWRAPPER_PYTHON = 'VIRTUALENVWRAPPER_PYTHON'
+VIRTUALENVWRAPPER_VIRTUALENV = 'VIRTUALENVWRAPPER_VIRTUALENV'
 
 
 class BaseTest(unittest.TestCase):
@@ -33,6 +36,9 @@ class BaseTest(unittest.TestCase):
         self.workdir = path(tempfile.mkdtemp(prefix='clue-tests-'))
         self.clue_conf_path = self.workdir / 'clue_conf'
         os.environ[CLUE_CONFIG_PATH] = self.clue_conf_path
+        os.environ[WORKON_HOME] = self.workdir / 'virtualenvs'
+        os.environ[VIRTUALENVWRAPPER_PYTHON] = '/usr/bin/python2'
+        os.environ[VIRTUALENVWRAPPER_VIRTUALENV] = '/usr/bin/virtualenv2'
         self.previous_dir = os.getcwd()
         os.chdir(self.workdir)
         self.addCleanup(self.cleanup)
@@ -43,7 +49,9 @@ class BaseTest(unittest.TestCase):
     def cleanup(self):
         os.chdir(self.previous_dir)
         shutil.rmtree(self.workdir, ignore_errors=True)
-        os.environ.pop(CLUE_CONFIG_PATH, None)
+        for prop in [CLUE_CONFIG_PATH, WORKON_HOME, VIRTUALENVWRAPPER_PYTHON,
+                     VIRTUALENVWRAPPER_VIRTUALENV]:
+            os.environ.pop(prop, None)
 
     def conf(self):
         return yaml.safe_load(self.clue_conf_path.text())

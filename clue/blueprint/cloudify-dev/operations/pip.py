@@ -84,7 +84,6 @@ def install_packages(**_):
                        for instance in package_node_instances))
 
     for virtualenv_location in virtualenvs:
-        pip = bake(sh.Command(os.path.join(virtualenv_location, 'bin', 'pip')))
         virtualenv_package_instances = [
             instance for instance in package_node_instances
             if instance.runtime_properties[
@@ -104,8 +103,11 @@ def install_packages(**_):
                     requirements.append(requirement)
         requirements_file = tempfile.mktemp(prefix='requirements-',
                                             suffix='.txt')
+        if not requirements:
+            return
         with open(requirements_file, 'w') as f:
             f.write('\n'.join(requirements))
+        pip = bake(sh.Command(os.path.join(virtualenv_location, 'bin', 'pip')))
         pip.install(
             requirement=requirements_file,
             c=os.path.join(virtualenv_location, 'constraints.txt')).wait()
