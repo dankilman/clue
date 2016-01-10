@@ -18,11 +18,12 @@ from setuptools import setup
 
 setup(
     name='clue',
-    version='0.6',
+    version='0.7',
     author='GigaSpaces',
     author_email='cosmo-admin@gigaspaces.com',
     packages=['clue'],
     description='Cloudify development environment CLI',
+    license='Apache License, Version 2.0',
     zip_safe=False,
     install_requires=[
         'sh',
