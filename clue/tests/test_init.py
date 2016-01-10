@@ -44,7 +44,7 @@ class TestInit(tests.BaseTest):
         self._test_docs(docs=True, docs_site=False)
 
     def _test_docs(self, docs, docs_site):
-        self.clue.setup(repos_dir=self.workdir / 'repos')
+        self.clue.setup(repos_dir=self.repos_dir)
         inputs = self.inputs()
         repos = {}
         if docs:
@@ -57,18 +57,16 @@ class TestInit(tests.BaseTest):
         node_templates = self.blueprint()['node_templates']
         docs_node = node_templates.get('docs.getcloudify.org-repo')
         docs_site_node = node_templates.get('docs.getcloudify.org-site-repo')
-
         assertion = self.assertIsNotNone if docs else self.assertIsNone
         assertion(docs_node)
         assertion = self.assertIsNotNone if docs_site else self.assertIsNone
         assertion(docs_site_node)
-
         if docs_site and not docs:
             self.assertEqual(1, len(docs_site_node['relationships']))
 
     def _test(self, reset=False, skip_setup=False):
         if not skip_setup:
-            self.clue.setup(repos_dir=self.workdir / 'repos')
+            self.clue.setup(repos_dir=self.repos_dir)
         inputs = self.inputs()
         inputs['repos'] = {
             'core': {

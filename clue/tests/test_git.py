@@ -14,21 +14,22 @@
 # limitations under the License.
 ############
 
-import json
-
 from clue import tests
 
 
-class TestOutputs(tests.BaseTest):
+class TestGit(tests.BaseTest):
 
-    def test(self):
-        self.clue_install()
-        outputs = self.clue.outputs().stdout.strip()
-        json_outputs = json.loads(self.clue.outputs(json=True).stdout.strip())
-        self.assertIn('repositories: {}'.format(self.repos_dir), outputs)
-        self.assertIn('virtualenv: {}'.format(self.virtualenvs / 'cloudify'),
-                      outputs)
-        self.assertEqual(json_outputs, {
-            'repositories': self.repos_dir,
-            'virtualenv': self.virtualenvs / 'cloudify'
-        })
+    def test_status(self):
+        repos = {
+            'core': {
+                'cloudify-rest-client': {'python': False}
+            }
+        }
+        self.clue_install(repos=repos)
+        output = self.clue.git.status().stdout.strip()
+        self.assertRegexpMatches(output,
+                                 r'.*cloudify-rest-client.*\| master')
+        self.clue.git.checkout('3.3.1-build')
+        output = self.clue.git.status().stdout.strip()
+        self.assertRegexpMatches(output,
+                                 r'.*cloudify-rest-client.*\| 3.3.1-build')

@@ -35,8 +35,10 @@ class BaseTest(unittest.TestCase):
     def setUp(self):
         self.workdir = path(tempfile.mkdtemp(prefix='clue-tests-'))
         self.clue_conf_path = self.workdir / 'clue_conf'
+        self.virtualenvs = self.workdir / 'virtualenvs'
+        self.repos_dir = self.workdir / 'repos'
         os.environ[CLUE_CONFIG_PATH] = self.clue_conf_path
-        os.environ[WORKON_HOME] = self.workdir / 'virtualenvs'
+        os.environ[WORKON_HOME] = self.virtualenvs
         os.environ[VIRTUALENVWRAPPER_PYTHON] = sys.executable
         os.environ[VIRTUALENVWRAPPER_VIRTUALENV] = path(
             sys.executable).dirname() / 'virtualenv'
@@ -72,3 +74,16 @@ class BaseTest(unittest.TestCase):
     def blueprint(self):
         return yaml.safe_load((self.storage_dir() / '.local' / 'resources' /
                                'blueprint.yaml').text())
+
+    def clue_install(self, requirements=None, repos=None):
+        self.clue.setup(repos_dir=self.repos_dir)
+        inputs = self.inputs()
+        requirements = requirements or []
+        repos = repos or {}
+        inputs.update({
+            'requirements': requirements,
+            'repos': repos
+        })
+        self.set_inputs(inputs)
+        self.clue.init()
+        self.clue_out.install()

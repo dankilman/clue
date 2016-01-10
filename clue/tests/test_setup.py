@@ -49,13 +49,11 @@ class TestSetup(tests.BaseTest):
 
     def _test(self,
               storage_dir=None,
-              repos_dir=None,
               editable=False,
               reset=False):
-        repos_dir = repos_dir or self.workdir
         kwargs = {
             'editable': editable,
-            'repos_dir': repos_dir,
+            'repos_dir': self.repos_dir,
             'reset': reset
         }
         if storage_dir:
@@ -67,7 +65,7 @@ class TestSetup(tests.BaseTest):
         assertion = self.assertTrue if editable else self.assertFalse
         assertion(self.editable(), editable)
         inputs = self.inputs()
-        self.assertEqual(inputs['repos_dir'], repos_dir)
+        self.assertEqual(inputs['repos_dir'], self.repos_dir)
         branches_dir = storage_dir / 'branches'
         self.assertEqual(inputs['branches_dir'], branches_dir)
         self.assertTrue(branches_dir.isdir())
