@@ -42,6 +42,8 @@ def clone(location, organization, repo, branch, clone_method, **_):
     location = os.path.expanduser(location)
     repo_location = os.path.join(location, repo)
     ctx.instance.runtime_properties['repo_location'] = repo_location
+    ctx.instance.runtime_properties['git_version'] = sh.git(
+        version=True).stdout.strip()
     if os.path.isdir(repo_location):
         return
     if clone_method == 'https':
@@ -51,8 +53,6 @@ def clone(location, organization, repo, branch, clone_method, **_):
     else:
         raise exceptions.NonRecoverableError('Illegal clone method: {0}'
                                              .format(clone_method))
-    ctx.instance.runtime_properties['git_version'] = sh.git(
-        version=True).stdout.strip()
     git.clone(clone_url,
               repo_location,
               '-b', branch).wait()
