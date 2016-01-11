@@ -119,7 +119,6 @@ def configure_virtualenv(
         constraints,
         postactivate_resource_path,
         git_retag_cloudify_resource_path,
-        repositories_dir,
         register_python_argcomplete,
         **_):
 
@@ -140,10 +139,7 @@ def configure_virtualenv(
         os.symlink(clue_source_path, clue_target_path)
 
     # postactivate
-    repositories_dir = os.path.expanduser(repositories_dir)
-    variables = dict(
-        repositories_dir=repositories_dir,
-        register_python_argcomplete=register_python_argcomplete)
+    variables = dict(register_python_argcomplete=register_python_argcomplete)
     ctx.download_resource_and_render(
         postactivate_resource_path,
         target_path=virtualenv_bin / 'postactivate',

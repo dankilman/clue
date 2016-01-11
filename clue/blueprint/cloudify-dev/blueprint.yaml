@@ -394,7 +394,6 @@ node_templates:
             constraints: { get_input: constraints }
             postactivate_resource_path: resources/postactivate
             git_retag_cloudify_resource_path: resources/git-retag-cloudify
-            repositories_dir: { get_property: [repos_dir, location] }
             virtualenv_location: { get_attribute: [SELF, virtualenv_location] }
             register_python_argcomplete: { get_input: register_python_argcomplete }
     relationships:

@@ -80,16 +80,22 @@ class BaseTest(unittest.TestCase):
 
     def clue_install(self,
                      requirements=None,
+                     constraints=None,
                      repos=None,
                      clone_method=None,
-                     git_config=None):
+                     git_config=None,
+                     register_python_argcomplete=None):
         try:
             self.clue.setup(repos_dir=self.repos_dir)
             inputs = self.inputs()
             requirements = requirements or []
+            constraints = constraints or []
+            register_python_argcomplete = register_python_argcomplete or []
             repos = repos or {}
             inputs.update({
                 'requirements': requirements,
+                'constraints': constraints,
+                'register_python_argcomplete': register_python_argcomplete,
                 'repos': repos
             })
             if clone_method:
