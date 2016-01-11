@@ -32,7 +32,7 @@ class TestCompletion(tests.BaseTest):
         self.verbose_args = ['-v', '--verbose']
 
     def test_clue(self):
-        builtin = ['setup', 'init', 'outputss'] + self.help_args
+        builtin = ['setup', 'init', 'outputs'] + self.help_args
         user = ['git', 'nose', 'pip', 'install']
         expected = builtin + user
         self.assert_completion(expected=expected)
