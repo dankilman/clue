@@ -15,6 +15,7 @@
 ############
 
 import sh
+import yaml
 
 from clue import tests
 
@@ -49,8 +50,9 @@ class TestGit(tests.BaseTest):
     def test_clone_method_https(self):
         self._test_clone_method(clone_method='https')
 
-    def test_clone_method_ssh(self):
-        self._test_clone_method(clone_method='ssh')
+    # sort of problematic testing ssh clone method
+    # def test_clone_method_ssh(self):
+    #     self._test_clone_method(clone_method='ssh')
 
     def _test_clone_method(self, clone_method):
         repo_dir = self._install(clone_method=clone_method)
@@ -105,6 +107,57 @@ class TestGit(tests.BaseTest):
                                  r'.*cloudify-rest-client.*\| '
                                  r'M cloudify_rest_client/client.py')
 
+    def test_checkout(self):
+        (core_repo_dir,
+         plugin_repo_dir,
+         misc_repo_dir) = self._install_repo_types()
+        branches_file = {
+            'cloudify-rest-client': '3.3.1-build'
+        }
+        branches_base_name = 'test.yaml'
+        branches_file_path = self.workdir / 'branches' / branches_base_name
+        branches_file_path.write_text(yaml.safe_dump(branches_file))
+
+        def assert_master():
+            for repo in [core_repo_dir, plugin_repo_dir, misc_repo_dir]:
+                with repo:
+                    self.assertIn('master', git.status())
+
+        def assert_custom():
+            for repo, expected in [(core_repo_dir, '3.3.1-build'),
+                                   (plugin_repo_dir, '1.3.1-build'),
+                                   (misc_repo_dir, 'master')]:
+                with repo:
+                    self.assertIn(expected, git.status())
+
+        def assert_branches_file():
+            for repo, expected in [(core_repo_dir, '3.3.1-build'),
+                                   (plugin_repo_dir, 'master'),
+                                   (misc_repo_dir, 'master')]:
+                with repo:
+                    self.assertIn(expected, git.status())
+
+        assert_master()
+        self.clue.git.checkout('.3.1-build')
+        assert_custom()
+        self.clue.git.checkout('master')
+        assert_master()
+        self.clue.git.checkout(branches_file_path)
+        assert_branches_file()
+        self.clue.git.checkout('.3.1-build')
+        assert_custom()
+        self.clue.git.checkout(branches_base_name)
+        assert_branches_file()
+
+    def test_diff(self):
+        self._install_repo_types()
+        self.clue.git.checkout('.3.1-build')
+        self.clue.git.checkout('.3-build')
+        output = self.clue.git.diff('.3-build...3.1-build').stdout.strip()
+        self.assertIn('cloudify-rest-client', output)
+        self.assertIn('cloudify-script-plugin', output)
+        self.assertNotIn('flask-securest', output)
+
     def _install(self, repo=None, repo_base=None, properties=None,
                  git_config=None, clone_method=None):
         properties = properties or {}
@@ -122,3 +175,24 @@ class TestGit(tests.BaseTest):
         self.clue_install(repos=repos, git_config=git_config,
                           clone_method=clone_method)
         return repo_dir
+
+    def _install_repo_types(self):
+        core_repo = 'cloudify-rest-client'
+        core_repo_dir = self.repos_dir / core_repo
+        plugin_repo = 'cloudify-script-plugin'
+        plugin_repo_dir = self.repos_dir / plugin_repo
+        misc_repo = 'flask-securest'
+        misc_repo_dir = self.repos_dir / misc_repo
+        repos = {
+            'core': {
+                core_repo: {'python': False}
+            },
+            'plugin': {
+                plugin_repo: {'python': False}
+            },
+            'misc': {
+                misc_repo: {'python': False}
+            }
+        }
+        self.clue_install(repos=repos)
+        return core_repo_dir, plugin_repo_dir, misc_repo_dir

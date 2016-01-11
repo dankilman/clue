@@ -83,18 +83,21 @@ class BaseTest(unittest.TestCase):
                      repos=None,
                      clone_method=None,
                      git_config=None):
-        self.clue.setup(repos_dir=self.repos_dir)
-        inputs = self.inputs()
-        requirements = requirements or []
-        repos = repos or {}
-        inputs.update({
-            'requirements': requirements,
-            'repos': repos
-        })
-        if clone_method:
-            inputs['clone_method'] = clone_method
-        if git_config:
-            inputs['git_config'] = git_config
-        self.set_inputs(inputs)
-        self.clue.init()
-        return self.clue.install()
+        try:
+            self.clue.setup(repos_dir=self.repos_dir)
+            inputs = self.inputs()
+            requirements = requirements or []
+            repos = repos or {}
+            inputs.update({
+                'requirements': requirements,
+                'repos': repos
+            })
+            if clone_method:
+                inputs['clone_method'] = clone_method
+            if git_config:
+                inputs['git_config'] = git_config
+            self.set_inputs(inputs)
+            self.clue.init()
+            return self.clue.install()
+        except sh.ErrorReturnCode as e:
+            self.fail(e.stdout)
