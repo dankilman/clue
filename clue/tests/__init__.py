@@ -84,7 +84,8 @@ class BaseTest(unittest.TestCase):
                      repos=None,
                      clone_method=None,
                      git_config=None,
-                     register_python_argcomplete=None):
+                     register_python_argcomplete=None,
+                     virtualenv_name=None):
         try:
             self.clue.setup(repos_dir=self.repos_dir)
             inputs = self.inputs()
@@ -98,6 +99,8 @@ class BaseTest(unittest.TestCase):
                 'register_python_argcomplete': register_python_argcomplete,
                 'repos': repos
             })
+            if virtualenv_name:
+                inputs['virtualenv_name'] = virtualenv_name
             if clone_method:
                 inputs['clone_method'] = clone_method
             if git_config:
