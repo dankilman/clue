@@ -53,7 +53,7 @@ class TestGit(tests.BaseTest):
         self._test_clone_method(clone_method='ssh')
 
     def _test_clone_method(self, clone_method):
-        repo_dir = self._install()
+        repo_dir = self._install(clone_method=clone_method)
         with repo_dir:
             origin = git.config('remote.origin.url').stdout.strip()
         if clone_method == 'ssh':
@@ -106,7 +106,7 @@ class TestGit(tests.BaseTest):
                                  r'M cloudify_rest_client/client.py')
 
     def _install(self, repo=None, repo_base=None, properties=None,
-                 git_config=None):
+                 git_config=None, clone_method=None):
         properties = properties or {}
         repo = repo or 'cloudify-rest-client'
         if repo_base:
@@ -119,5 +119,6 @@ class TestGit(tests.BaseTest):
                        'properties': properties}
             }
         }
-        self.clue_install(repos=repos, git_config=git_config)
+        self.clue_install(repos=repos, git_config=git_config,
+                          clone_method=clone_method)
         return repo_dir
