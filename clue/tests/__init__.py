@@ -78,7 +78,11 @@ class BaseTest(unittest.TestCase):
         return yaml.safe_load((self.storage_dir() / '.local' / 'resources' /
                                'blueprint.yaml').text())
 
-    def clue_install(self, requirements=None, repos=None):
+    def clue_install(self,
+                     requirements=None,
+                     repos=None,
+                     clone_method=None,
+                     git_config=None):
         self.clue.setup(repos_dir=self.repos_dir)
         inputs = self.inputs()
         requirements = requirements or []
@@ -87,6 +91,10 @@ class BaseTest(unittest.TestCase):
             'requirements': requirements,
             'repos': repos
         })
+        if clone_method:
+            inputs['clone_method'] = clone_method
+        if git_config:
+            inputs['git_config'] = git_config
         self.set_inputs(inputs)
         self.clue.init()
         return self.clue.install()
