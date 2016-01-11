@@ -20,10 +20,10 @@ from clue import tests
 class TestNose(tests.BaseTest):
 
     def test(self):
-        requirements = ['nose', 'testtools', 'mock']
-        repo = 'cloudify-dsl-parser'
-        repos = {'core': {repo: {}}}
+        requirements = ['nose']
+        repo = 'cloudify-rest-client'
+        branch = '3.3'
+        repos = {'core': {repo: {'properties': {'branch': branch}}}}
         self.clue_install(repos=repos, requirements=requirements)
-        self.clue.git.checkout('3.3')
         output = self.clue.nose('{}-package'.format(repo)).stdout.strip()
         self.assertTrue(output.endswith('OK'))

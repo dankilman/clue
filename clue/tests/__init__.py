@@ -33,6 +33,7 @@ VIRTUALENVWRAPPER_VIRTUALENV = 'VIRTUALENVWRAPPER_VIRTUALENV'
 class BaseTest(unittest.TestCase):
 
     verbose = True
+    default_clone_method = None
 
     def setUp(self):
         self.workdir = path(tempfile.mkdtemp(prefix='clue-tests-'))
@@ -103,6 +104,8 @@ class BaseTest(unittest.TestCase):
                 inputs['virtualenv_name'] = virtualenv_name
             if clone_method:
                 inputs['clone_method'] = clone_method
+            elif self.default_clone_method:
+                inputs['clone_method'] = self.default_clone_method
             if git_config:
                 inputs['git_config'] = git_config
             self.set_inputs(inputs)
