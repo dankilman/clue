@@ -38,6 +38,7 @@ def _git():
 @operation
 def clone(location, organization, repo, branch, clone_method, **_):
     git = bake(sh.git)
+
     location = os.path.expanduser(location)
     repo_location = os.path.join(location, repo)
     ctx.instance.runtime_properties['repo_location'] = repo_location
@@ -50,6 +51,8 @@ def clone(location, organization, repo, branch, clone_method, **_):
     else:
         raise exceptions.NonRecoverableError('Illegal clone method: {0}'
                                              .format(clone_method))
+    ctx.instance.runtime_properties['git_version'] = sh.git(
+        version=True).stdout.strip()
     git.clone(clone_url,
               repo_location,
               '-b', branch).wait()
@@ -75,7 +78,13 @@ def configure(commit_msg_resource_path, git_config, **_):
 @operation
 def pull(**_):
     git = _git()
-    git.pull(prune=True, tags=True).wait()
+    kwargs = {
+        'prune': True
+    }
+    git_version = ctx.instance.runtime_properties['git_version']
+    if git_version >= 'git version 2.0.0':
+        kwargs['tags'] = True
+    git.pull(**kwargs).wait()
 
 
 @operation
