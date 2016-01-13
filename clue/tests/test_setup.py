@@ -31,6 +31,9 @@ class TestSetup(tests.BaseTest):
         storage_dir = self.workdir / 'storage'
         self._test(storage_dir=storage_dir)
 
+    def test_explicit_env_name(self):
+        self._test(name='second')
+
     def test_editable_false(self):
         self._test(editable=False)
 
@@ -50,7 +53,8 @@ class TestSetup(tests.BaseTest):
     def _test(self,
               storage_dir=None,
               editable=False,
-              reset=False):
+              reset=False,
+              name=None):
         kwargs = {
             'editable': editable,
             'repos_dir': self.repos_dir,
@@ -60,11 +64,16 @@ class TestSetup(tests.BaseTest):
             kwargs['storage_dir'] = storage_dir
         else:
             storage_dir = path(os.getcwd())
+        if name:
+            kwargs['name'] = name
+        else:
+            name = 'main'
         self.clue.setup(**kwargs)
-        self.assertEqual(self.storage_dir(), storage_dir)
+        self.assertEqual(self.current_env(), name)
+        self.assertEqual(self.storage_dir(name), storage_dir)
         assertion = self.assertTrue if editable else self.assertFalse
-        assertion(self.editable(), editable)
-        inputs = self.inputs()
+        assertion(self.editable(name), editable)
+        inputs = self.inputs(name)
         self.assertEqual(inputs['repos_dir'], self.repos_dir)
         branches_dir = storage_dir / 'branches'
         self.assertEqual(inputs['branches_dir'], branches_dir)

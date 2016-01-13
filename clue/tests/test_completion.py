@@ -32,13 +32,14 @@ class TestCompletion(tests.BaseTest):
         self.verbose_args = ['-v', '--verbose']
 
     def test_clue(self):
-        builtin = ['setup', 'init', 'outputs'] + self.help_args
+        builtin = ['setup', 'init', 'status', 'env'] + self.help_args
         user = ['git', 'nose', 'pip', 'install']
         expected = builtin + user
         self.assert_completion(expected=expected)
 
     def test_setup(self):
-        builtin = ['--storage-dir', '-s', '--editable', '-e', '--reset', '-r']
+        builtin = ['--storage-dir', '-s', '--editable', '-e', '--reset', '-r',
+                   '-n', '--name']
         builtin += self.help_args
         user = ['-d', '--repos-dir']
         expected = builtin + user

@@ -60,24 +60,31 @@ class BaseTest(unittest.TestCase):
                      VIRTUALENVWRAPPER_VIRTUALENV]:
             os.environ.pop(prop, None)
 
-    def conf(self):
+    def _load_conf(self):
         return yaml.safe_load(self.clue_conf_path.text())
 
-    def storage_dir(self):
-        return path(self.conf()['storage_dir'])
+    def conf(self, name='main'):
+        return self._load_conf()['configurations'][name]
 
-    def editable(self):
-        return self.conf()['editable']
+    def current_env(self):
+        return self._load_conf()['current']
 
-    def inputs(self):
-        return yaml.safe_load((self.storage_dir() / 'inputs.yaml').text())
+    def storage_dir(self, name='main'):
+        return path(self.conf(name)['storage_dir'])
 
-    def set_inputs(self, inputs):
-        (self.storage_dir() / 'inputs.yaml').write_text(yaml.safe_dump(inputs))
+    def editable(self, name='main'):
+        return self.conf(name)['editable']
 
-    def blueprint(self):
-        return yaml.safe_load((self.storage_dir() / '.local' / 'resources' /
-                               'blueprint.yaml').text())
+    def inputs(self, name='main'):
+        return yaml.safe_load((self.storage_dir(name) / 'inputs.yaml').text())
+
+    def set_inputs(self, inputs, name='main'):
+        (self.storage_dir(name) / 'inputs.yaml').write_text(
+            yaml.safe_dump(inputs))
+
+    def blueprint(self, name='main'):
+        return yaml.safe_load((self.storage_dir(name) / '.local' /
+                               'resources' / 'blueprint.yaml').text())
 
     def clue_install(self,
                      requirements=None,

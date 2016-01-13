@@ -19,16 +19,24 @@ import json
 from clue import tests
 
 
-class TestOutputs(tests.BaseTest):
+class TestStatus(tests.BaseTest):
 
     def test(self):
         self.clue_install()
-        outputs = self.clue.outputs().stdout.strip()
-        json_outputs = json.loads(self.clue.outputs(json=True).stdout.strip())
-        self.assertIn('repositories: {}'.format(self.repos_dir), outputs)
+        status = self.clue.status().stdout.strip()
+        json_status = json.loads(self.clue.status(json=True).stdout.strip())
+        self.assertIn('current: main', status)
+        self.assertIn('repositories: {}'.format(self.repos_dir), status)
         self.assertIn('virtualenv: {}'.format(self.virtualenvs / 'cloudify'),
-                      outputs)
-        self.assertEqual(json_outputs, {
-            'repositories': self.repos_dir,
-            'virtualenv': self.virtualenvs / 'cloudify'
+                      status)
+        self.assertEqual(json_status, {
+            'env': {
+                'current': 'main',
+                'storage_dir': self.storage_dir(),
+                'editable': self.editable()
+            },
+            'outputs': {
+                'repositories': self.repos_dir,
+                'virtualenv': self.virtualenvs / 'cloudify'
+            }
         })
