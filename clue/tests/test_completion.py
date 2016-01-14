@@ -15,6 +15,7 @@
 ############
 
 import sh
+import yaml
 
 from clue import tests
 
@@ -51,12 +52,13 @@ class TestCompletion(tests.BaseTest):
         expected = builtin + user
         self.assert_completion(expected=expected,
                                args=['git'])
-        file1 = self.workdir / 'branches' / 'file1.yaml'
-        file2 = self.workdir / 'branches' / 'file2.yaml'
-        file1.touch()
-        file2.touch()
+        branches_yaml = self.workdir / 'branches.yaml'
+        branches_yaml.write_text(yaml.safe_dump({
+            'test1': {},
+            'test2': {}
+        }))
         builtin = self.verbose_args + self.help_args
-        user = ['file1.yaml', 'file2.yaml']
+        user = ['default', 'test1', 'test2']
         expected = builtin + user
         self.assert_completion(expected=expected, args=['git', 'checkout'])
 

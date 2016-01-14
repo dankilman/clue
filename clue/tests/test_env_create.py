@@ -75,10 +75,11 @@ class TestEnvCreate(tests.BaseTest):
         assertion(self.editable(name), editable)
         inputs = self.inputs(name)
         self.assertEqual(inputs['repos_dir'], self.repos_dir)
-        branches_dir = storage_dir / 'branches'
-        self.assertEqual(inputs['branches_dir'], branches_dir)
-        self.assertTrue(branches_dir.isdir())
+        branches_yaml = storage_dir / 'branches.yaml'
+        self.assertEqual(inputs['branches_file'], branches_yaml)
+        self.assertTrue(branches_yaml.isfile())
         for key in ['repos', 'virtualenv_name', 'clone_method',
-                    'virtualenvwrapper_path', 'register_python_argcomplete',
-                    'requirements', 'constraints', 'git_config']:
+                    'organization', 'virtualenvwrapper_path',
+                    'register_python_argcomplete', 'requirements',
+                    'constraints', 'git_config']:
             self.assertIn(key, inputs)

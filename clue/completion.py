@@ -23,9 +23,17 @@ def package_completer(env, prefix, **kwargs):
 
 
 def branches_completer(env, prefix, **kwargs):
-    branches_dir = env.plan['inputs'].get('branches_dir')
-    if not branches_dir:
+    branches_file = env.plan['inputs'].get('branches_file')
+    if not branches_file:
         return []
     import os
-    return (f for f in os.listdir(os.path.expanduser(branches_dir))
-            if f.startswith(prefix))
+    branches_file = os.path.expanduser(branches_file)
+    if not os.path.exists(branches_file):
+        return []
+    import yaml
+    with open(branches_file) as f:
+        branches = yaml.safe_load(f)
+    result = [k for k in branches if k.startswith(prefix)]
+    if 'default'.startswith(prefix):
+        result.append('default')
+    return result

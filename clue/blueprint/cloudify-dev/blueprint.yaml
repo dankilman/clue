@@ -143,8 +143,8 @@ inputs:
   clone_method:
     description: clone github repos using ssh or https
     default: https
-  branches_dir:
-    description: directory that contains branches yaml files for 'git checkout'
+  branches_file:
+    description: path to yaml file with branch sets
   virtualenvwrapper_path:
     description: >
       path to virtualenvwrapper script to be sourced before creating
@@ -211,9 +211,9 @@ node_types:
       branch:
         description: the repo branch
         default: master
-      branches_dir:
-        description: directory with branches yaml files
-        default: { get_input: branches_dir }
+      branches_file:
+        description: path to file with branch set definitions
+        default: { get_input: branches_file }
       location:
         default: { get_input: repos_dir }
       repo_type:
