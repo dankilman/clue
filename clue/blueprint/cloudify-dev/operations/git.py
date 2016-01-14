@@ -101,7 +101,7 @@ def checkout(repo_type, branch, **_):
     branches = {}
     if os.path.exists(branches_file):
         with open(branches_file) as f:
-            branches = yaml.safe_load(f)
+            branches = yaml.safe_load(f) or {}
     if branch in branches:
         branches_set = branches[branch]
         name = ctx.node.properties['name']
