@@ -37,6 +37,8 @@ templates:
     retry_interval: 0
     thread_pool_size: 1
 
+command_after_init_on_apply: install
+
 commands:
   install:
     workflow: install

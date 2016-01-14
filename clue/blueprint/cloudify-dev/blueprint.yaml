@@ -26,101 +26,122 @@ inputs:
       is initialized, several node templates get generated to reflect
       the repositories and python packages specified in this input.
     default:
-      core:
-        cloudify-dsl-parser: {}
-        cloudify-rest-client: {}
-        cloudify-amqp-influxdb: {}
-        cloudify-plugins-common:
-          python:
-            dependencies:
-            - cloudify-rest-client
-        cloudify-manager:
-          python:
-          - name: cloudify-rest-service
-            path: rest-service
-            dependencies:
-            - cloudify-dsl-parser
-            - flask-securest
-          - name: cloudify-workflows
-            path: workflows
-            dependencies:
-            - cloudify-plugins-common
-          - name: cloudify-riemann-controller-plugin
-            path: plugins/riemann-controller
-            dependencies:
-            - cloudify-plugins-common
-          - name: cloudify-integration-tests
-            path: tests
-            dependencies:
-            - cloudify-plugins-common
-            - cloudify-rest-client
-            - cloudify-script-plugin
-            - cloudify-diamond-plugin
-            - cloudify-dsl-parser
-            - cloudify-rest-service
-        cloudify-cli:
-          python:
-            dependencies:
-            - cloudify-dsl-parser
-            - cloudify-rest-client
-            - cloudify-plugins-common
-            - cloudify-script-plugin
-        cloudify-agent:
-          python:
-            dependencies:
-            - cloudify-plugins-common
-            - cloudify-script-plugin
-            - cloudify-diamond-plugin
-        cloudify-system-tests:
-          python:
-            dependencies:
-            - cloudify-cli
-        cloudify-packager:
-          python: false
-        cloudify-hello-world-example:
-          python: false
-        cloudify-nodecellar-example:
-          python: false
-        cloudify-manager-blueprints:
-          python: false
-        cloudify-plugin-template:
-          python: false
-      plugin:
-        cloudify-script-plugin: {}
-        cloudify-diamond-plugin: {}
-        cloudify-docker-plugin: {}
-        cloudify-chef-plugin: {}
-        cloudify-puppet-plugin: {}
-        cloudify-fabric-plugin: {}
-        cloudify-openstack-plugin: {}
-        cloudify-aws-plugin: {}
-      misc:
-        flask-securest: {}
-        docs.getcloudify.org:
-          python: false
-        docs.getcloudify.org-site:
-          python: false
-        cloudify-agent-packager:
-          python:
-            dependencies:
-            - cloudify-agent
-        claw:
-          properties:
-            organization: dankilman
-          python:
-            dependencies:
-            - cloudify-system-tests
-        claw-scripts:
-          properties:
-            organization: dankilman
-          python: false
+      cloudify-dsl-parser:
+        type: core
+      cloudify-rest-client:
+        type: core
+      cloudify-amqp-influxdb:
+        type: core
+      cloudify-plugins-common:
+        type: core
+        python:
+          dependencies:
+          - cloudify-rest-client
+      cloudify-manager:
+        type: core
+        python:
+        - name: cloudify-rest-service
+          path: rest-service
+          dependencies:
+          - cloudify-dsl-parser
+          - flask-securest
+        - name: cloudify-workflows
+          path: workflows
+          dependencies:
+          - cloudify-plugins-common
+        - name: cloudify-riemann-controller-plugin
+          path: plugins/riemann-controller
+          dependencies:
+          - cloudify-plugins-common
+        - name: cloudify-integration-tests
+          path: tests
+          dependencies:
+          - cloudify-plugins-common
+          - cloudify-rest-client
+          - cloudify-script-plugin
+          - cloudify-diamond-plugin
+          - cloudify-dsl-parser
+          - cloudify-rest-service
+      cloudify-cli:
+        type: core
+        python:
+          dependencies:
+          - cloudify-dsl-parser
+          - cloudify-rest-client
+          - cloudify-plugins-common
+          - cloudify-script-plugin
+      cloudify-agent:
+        type: core
+        python:
+          dependencies:
+          - cloudify-plugins-common
+          - cloudify-script-plugin
+          - cloudify-diamond-plugin
+      cloudify-system-tests:
+        type: core
+        python:
+          dependencies:
+          - cloudify-cli
+      cloudify-packager:
+        type: core
+        python: false
+      cloudify-hello-world-example:
+        type: core
+        python: false
+      cloudify-nodecellar-example:
+        type: core
+        python: false
+      cloudify-manager-blueprints:
+        type: core
+        python: false
+      cloudify-plugin-template:
+        type: core
+        python: false
+      cloudify-script-plugin:
+        type: plugin
+      cloudify-diamond-plugin:
+        type: plugin
+      cloudify-docker-plugin:
+        type: plugin
+      cloudify-chef-plugin:
+        type: plugin
+      cloudify-puppet-plugin:
+        type: plugin
+      cloudify-fabric-plugin:
+        type: plugin
+      cloudify-openstack-plugin:
+        type: plugin
+      cloudify-aws-plugin:
+        type: plugin
+      flask-securest: {}
+      docs.getcloudify.org:
+        python: false
+      docs.getcloudify.org-site:
+        python: false
+      cloudify-agent-packager:
+        python:
+          dependencies:
+          - cloudify-agent
+      claw:
+        properties:
+          organization: dankilman
+        python:
+          dependencies:
+          - cloudify-system-tests
+      claw-scripts:
+        properties:
+          organization: dankilman
+        python: false
   virtualenv_name:
     description: The virtualenv name to pass to mkvirtualenv
     default: cloudify
   repos_dir:
     description: directory to contain all closed repositories
+  organization:
+    description: defaulty organization for cloned repos
+    default: cloudify-cosmo
   clone_method:
-    description: clone github repos using ssh or https.
+    description: clone github repos using ssh or https
     default: https
   branches_dir:
     description: directory that contains branches yaml files for 'git checkout'
@@ -183,7 +204,7 @@ node_types:
         description: the repo name
       organization:
         description: the github organization
-        default: cloudify-cosmo
+        default: { get_input: organization }
       clone_method:
         description: clone with https or ssh
         default: { get_input: clone_method }

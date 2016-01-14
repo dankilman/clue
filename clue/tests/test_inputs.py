@@ -23,3 +23,9 @@ class TestInputs(tests.BaseTest):
         virtualenv_name = 'clue_test_virtualenv'
         self.clue_install(virtualenv_name=virtualenv_name)
         self.assertTrue((self.virtualenvs / virtualenv_name).isdir())
+
+    def test_organization(self):
+        repos = {'claw-scripts': {'python': False}}
+        organization = 'dankilman'
+        self.clue_install(organization=organization, repos=repos)
+        self.assertTrue((self.repos_dir / 'claw-scripts').isdir())

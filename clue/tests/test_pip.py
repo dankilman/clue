@@ -28,7 +28,7 @@ class TestPip(tests.BaseTest):
     def test_install(self):
         repo = 'cloudify-rest-client'
         new_version = '11111.0.1'
-        repos = {'core': {repo: {}}}
+        repos = {repo: {}}
         self.clue_install(repos=repos)
         pip = sh.Command(self.virtualenvs / 'cloudify' / 'bin' / 'pip')
 
@@ -48,7 +48,7 @@ class TestPip(tests.BaseTest):
         self.assertEqual(new_version, extract_version())
 
     def test_configure_virtualenv(self):
-        repos = {'core': {'cloudify-rest-client': {}}}
+        repos = {'cloudify-rest-client': {}}
         constraints = ['requests==2.5.3']
         requirements = ['xmldict==0.4.1']
         register_python_argcomplete = ['crazy-crazy']

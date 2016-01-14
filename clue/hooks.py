@@ -21,64 +21,63 @@ def after_env_create(loader, **kwargs):
 
 
 def before_init(blueprint, inputs, **kwargs):
-    repo_groups = inputs.pop('repos', {})
     node_templates = blueprint['node_templates']
-    for repo_type, repos in repo_groups.items():
-        for repo_name, repo in repos.items():
-            repo_node_template_name = '{}-repo'.format(repo_name)
-            properties = repo.get('properties', {})
-            properties.update({
-                'name': repo_name,
-                'repo_type': repo_type
-            })
+    repos = inputs.pop('repos', {})
+    for repo_name, repo in repos.items():
+        repo_node_template_name = '{}-repo'.format(repo_name)
+        properties = repo.get('properties', {})
+        properties.update({
+            'name': repo_name,
+            'repo_type': repo.get('type', 'misc')
+        })
+        node_templates.update({
+            repo_node_template_name: {
+                'type': 'git_repo',
+                'properties': properties,
+                'relationships': [{
+                    'target': 'repos_dir',
+                    'type': 'cloudify.relationships.depends_on'
+                }]
+            }
+        })
+        python = repo.get('python', True)
+        if not python:
+            continue
+        elif python is True:
+            python = [{
+                'name': repo_name
+            }]
+        elif isinstance(python, dict):
+            python = [python]
+        for python_package in python:
+            package_name = python_package.get('name', repo_name)
+            package_node_template_name = '{}-package'.format(package_name)
             node_templates.update({
-                repo_node_template_name: {
-                    'type': 'git_repo',
-                    'properties': properties,
-                    'relationships': [{
-                        'target': 'repos_dir',
-                        'type': 'cloudify.relationships.depends_on'
-                    }]
+                package_node_template_name: {
+                    'type': 'python_package',
+                    'properties': {
+                        'name': package_name,
+                        'path': python_package.get('path', '')
+                    },
+                    'relationships': [
+                        {'target': repo_node_template_name,
+                         'type': 'package_depends_on_repo'},
+                        {'target': 'virtualenv',
+                         'type': 'package_depends_on_virtualenv'}
+                    ]
                 }
             })
-            python = repo.get('python', True)
-            if not python:
-                continue
-            elif python is True:
-                python = [{
-                    'name': repo_name
-                }]
-            elif isinstance(python, dict):
-                python = [python]
-            for python_package in python:
-                package_name = python_package.get('name', repo_name)
-                package_node_template_name = '{}-package'.format(package_name)
-                node_templates.update({
-                    package_node_template_name: {
-                        'type': 'python_package',
-                        'properties': {
-                            'name': package_name,
-                            'path': python_package.get('path', '')
-                        },
-                        'relationships': [
-                            {'target': repo_node_template_name,
-                             'type': 'package_depends_on_repo'},
-                            {'target': 'virtualenv',
-                             'type': 'package_depends_on_virtualenv'}
-                        ]
-                    }
+            dependencies = python_package.get('dependencies', [])
+            if (repo.get('type') == 'plugin' and
+                    'cloudify-plugins-common' not in dependencies):
+                dependencies.append('cloudify-plugins-common')
+            for dependency in dependencies:
+                relationships = node_templates[package_node_template_name][
+                    'relationships']
+                relationships.append({
+                    'target': '{}-package'.format(dependency),
+                    'type': 'package_depends_on_package'
                 })
-                dependencies = python_package.get('dependencies', [])
-                if (repo_type == 'plugin' and
-                        'cloudify-plugins-common' not in dependencies):
-                    dependencies.append('cloudify-plugins-common')
-                for dependency in dependencies:
-                    relationships = node_templates[package_node_template_name][
-                        'relationships']
-                    relationships.append({
-                        'target': '{}-package'.format(dependency),
-                        'type': 'package_depends_on_package'
-                    })
     package_installer = node_templates['package_installer']
     relationships = package_installer['relationships']
     for node_template_name, node_template in node_templates.items():

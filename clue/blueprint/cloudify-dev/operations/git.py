@@ -109,6 +109,8 @@ def checkout(repo_type, branch, **_):
             branch = branches[name]
         else:
             branch = ctx.node.properties['branch']
+    elif branch == 'default':
+        branch = ctx.node.properties['branch']
     elif repo_type == 'misc':
         return
     elif repo_type not in ['core', 'plugin']:

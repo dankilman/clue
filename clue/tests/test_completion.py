@@ -25,14 +25,14 @@ class TestCompletion(tests.BaseTest):
         super(TestCompletion, self).setUp()
         self.clue.env.create(repos_dir=self.repos_dir)
         inputs = self.inputs()
-        inputs['repos'] = {'core': {'cloudify-dsl-parser': {}}}
+        inputs['repos'] = {'cloudify-dsl-parser': {}}
         self.set_inputs(inputs)
         self.clue.init()
         self.help_args = ['-h', '--help']
         self.verbose_args = ['-v', '--verbose']
 
     def test_clue(self):
-        builtin = ['init', 'status', 'env'] + self.help_args
+        builtin = ['init', 'status', 'env', 'apply'] + self.help_args
         user = ['git', 'nose', 'pip', 'install']
         expected = builtin + user
         self.assert_completion(expected=expected)

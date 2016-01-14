@@ -44,8 +44,11 @@ class TestGit(tests.BaseTest):
             properties={'organization': 'dankilman'})
         with repo_dir:
             origin = git.config('remote.origin.url').stdout.strip()
-        self.assertEqual(origin,
-                         'https://github.com/dankilman/claw-scripts.git')
+        if self.default_clone_method == 'ssh':
+            prefix = 'git@github.com:'
+        else:
+            prefix = 'https://github.com/'
+        self.assertEqual(origin, '{}dankilman/claw-scripts.git'.format(prefix))
 
     def test_clone_method_https(self):
         self._test_clone_method(clone_method='https')
@@ -104,8 +107,8 @@ class TestGit(tests.BaseTest):
         self.assertRegexpMatches(output,
                                  r'.*cloudify-rest-client.*\| 3.3.1-build')
         self.assertRegexpMatches(output,
-                                 r'.*cloudify-rest-client.*\| '
-                                 r'M cloudify_rest_client/client.py')
+                                 r'.*cloudify-rest-client.*\| .*'
+                                 r'M.*cloudify_rest_client/client.py')
 
     def test_checkout(self):
         (core_repo_dir,
@@ -148,6 +151,13 @@ class TestGit(tests.BaseTest):
         assert_custom()
         self.clue.git.checkout(branches_base_name)
         assert_branches_file()
+        self.clue.git.checkout('master')
+        assert_master()
+        with misc_repo_dir:
+            git.checkout('0.6')
+            self.assertIn('0.6', git.status())
+        self.clue.git.checkout('default')
+        assert_master()
 
     def test_diff(self):
         self._install_repo_types()
@@ -167,10 +177,7 @@ class TestGit(tests.BaseTest):
         else:
             repo_dir = self.repos_dir / repo
         repos = {
-            'core': {
-                repo: {'python': False,
-                       'properties': properties}
-            }
+            repo: {'python': False, 'properties': properties, 'type': 'core'}
         }
         self.clue_install(repos=repos, git_config=git_config,
                           clone_method=clone_method)
@@ -184,15 +191,9 @@ class TestGit(tests.BaseTest):
         misc_repo = 'flask-securest'
         misc_repo_dir = self.repos_dir / misc_repo
         repos = {
-            'core': {
-                core_repo: {'python': False}
-            },
-            'plugin': {
-                plugin_repo: {'python': False}
-            },
-            'misc': {
-                misc_repo: {'python': False}
-            }
+            core_repo: {'type': 'core', 'python': False},
+            plugin_repo: {'type': 'plugin', 'python': False},
+            misc_repo: {'python': False}
         }
         self.clue_install(repos=repos)
         return core_repo_dir, plugin_repo_dir, misc_repo_dir

@@ -51,7 +51,7 @@ class TestInit(tests.BaseTest):
             repos['docs.getcloudify.org'] = {'python': False}
         if docs_site:
             repos['docs.getcloudify.org-site'] = {'python': False}
-        inputs['repos'] = {'misc': repos}
+        inputs['repos'] = repos
         self.set_inputs(inputs)
         self.clue.init()
         node_templates = self.blueprint()['node_templates']
@@ -69,47 +69,44 @@ class TestInit(tests.BaseTest):
             self.clue.env.create(repos_dir=self.repos_dir)
         inputs = self.inputs()
         inputs['repos'] = {
-            'core': {
-                'cloudify-dsl-parser': {},
-                'cloudify-rest-client': {},
-                'cloudify-plugins-common': {
-                    'python': {
-                        'dependencies': [
-                            'cloudify-rest-client',
-                            'cloudify-dsl-parser'
-                        ]
-                    }
-                },
-                'cloudify-manager': {
-                    'python': [
-                        {'name': 'cloudify-rest-service',
-                         'path': 'rest-service',
-                         'dependencies': ['cloudify-dsl-parser']},
-                        {'name': 'cloudify-workflows',
-                         'path': 'workflows'}
+            'cloudify-dsl-parser': {'type': 'core'},
+            'cloudify-rest-client': {'type': 'core'},
+            'cloudify-plugins-common': {
+                'type': 'core',
+                'python': {
+                    'dependencies': [
+                        'cloudify-rest-client',
+                        'cloudify-dsl-parser'
                     ]
-                },
-                'cloudify-cli': {}
-            },
-            'plugin': {
-                'cloudify-openstack-plugin': {},
-                'cloudify-aws-plugin': {
-                    'python': {
-                        'dependencies': ['cloudify-plugins-common']
-                    }
                 }
             },
-            'misc': {
-                'docs.getcloudify.org': {
-                    'python': False
-                },
-                'docs.getcloudify.org-site': {
-                    'python': False
-                },
-                'claw': {
-                    'properties': {
-                        'organization': 'dankilman'
-                    }
+            'cloudify-manager': {
+                'type': 'core',
+                'python': [
+                    {'name': 'cloudify-rest-service',
+                     'path': 'rest-service',
+                     'dependencies': ['cloudify-dsl-parser']},
+                    {'name': 'cloudify-workflows',
+                     'path': 'workflows'}
+                ]
+            },
+            'cloudify-cli': {'type': 'core'},
+            'cloudify-openstack-plugin': {'type': 'plugin'},
+            'cloudify-aws-plugin': {
+                'type': 'plugin',
+                'python': {
+                    'dependencies': ['cloudify-plugins-common']
+                }
+            },
+            'docs.getcloudify.org': {
+                'python': False
+            },
+            'docs.getcloudify.org-site': {
+                'python': False
+            },
+            'claw': {
+                'properties': {
+                    'organization': 'dankilman'
                 }
             }
         }

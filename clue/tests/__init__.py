@@ -33,7 +33,7 @@ VIRTUALENVWRAPPER_VIRTUALENV = 'VIRTUALENVWRAPPER_VIRTUALENV'
 class BaseTest(unittest.TestCase):
 
     verbose = True
-    default_clone_method = None
+    default_clone_method = 'ssh'
 
     def setUp(self):
         self.workdir = path(tempfile.mkdtemp(prefix='clue-tests-'))
@@ -91,6 +91,7 @@ class BaseTest(unittest.TestCase):
                      constraints=None,
                      repos=None,
                      clone_method=None,
+                     organization=None,
                      git_config=None,
                      register_python_argcomplete=None,
                      virtualenv_name=None):
@@ -115,8 +116,9 @@ class BaseTest(unittest.TestCase):
                 inputs['clone_method'] = self.default_clone_method
             if git_config:
                 inputs['git_config'] = git_config
+            if organization:
+                inputs['organization'] = organization
             self.set_inputs(inputs)
-            self.clue.init()
-            return self.clue.install()
+            return self.clue.apply()
         except sh.ErrorReturnCode as e:
             self.fail(e.stdout)

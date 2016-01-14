@@ -23,7 +23,7 @@ class TestNose(tests.BaseTest):
         requirements = ['nose']
         repo = 'cloudify-rest-client'
         branch = '3.3'
-        repos = {'core': {repo: {'properties': {'branch': branch}}}}
+        repos = {repo: {'properties': {'branch': branch}}}
         self.clue_install(repos=repos, requirements=requirements)
         output = self.clue.nose('{}-package'.format(repo)).stdout.strip()
         self.assertTrue(output.endswith('OK'))
