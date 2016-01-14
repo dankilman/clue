@@ -22,7 +22,7 @@ from path import path
 from clue import tests
 
 
-class TestSetup(tests.BaseTest):
+class TestEnvCreate(tests.BaseTest):
 
     def test_implicit_storage_dir(self):
         self._test()
@@ -68,7 +68,7 @@ class TestSetup(tests.BaseTest):
             kwargs['name'] = name
         else:
             name = 'main'
-        self.clue.setup(**kwargs)
+        self.clue.env.create(**kwargs)
         self.assertEqual(self.current_env(), name)
         self.assertEqual(self.storage_dir(name), storage_dir)
         assertion = self.assertTrue if editable else self.assertFalse

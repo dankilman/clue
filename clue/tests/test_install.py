@@ -20,6 +20,6 @@ from clue import tests
 class TestInstall(tests.BaseTest):
 
     def test_default(self):
-        self.clue.setup(repos_dir=self.repos_dir)
+        self.clue.env.create(repos_dir=self.repos_dir)
         self.clue.init()
         self.clue.install()

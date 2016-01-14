@@ -27,12 +27,12 @@ class TestInit(tests.BaseTest):
     def test_existing_no_reset(self):
         self._test()
         with self.assertRaises(sh.ErrorReturnCode) as c:
-            self._test(skip_setup=True)
+            self._test(skip_env_create=True)
         self.assertIn('--reset to re-initialize', c.exception.stdout)
 
     def test_existing_reset(self):
         self._test()
-        self._test(skip_setup=True, reset=True)
+        self._test(skip_env_create=True, reset=True)
 
     def test_no_docs_no_docs_site(self):
         self._test_docs(docs=False, docs_site=False)
@@ -44,7 +44,7 @@ class TestInit(tests.BaseTest):
         self._test_docs(docs=True, docs_site=False)
 
     def _test_docs(self, docs, docs_site):
-        self.clue.setup(repos_dir=self.repos_dir)
+        self.clue.env.create(repos_dir=self.repos_dir)
         inputs = self.inputs()
         repos = {}
         if docs:
@@ -64,9 +64,9 @@ class TestInit(tests.BaseTest):
         if docs_site and not docs:
             self.assertEqual(1, len(docs_site_node['relationships']))
 
-    def _test(self, reset=False, skip_setup=False):
-        if not skip_setup:
-            self.clue.setup(repos_dir=self.repos_dir)
+    def _test(self, reset=False, skip_env_create=False):
+        if not skip_env_create:
+            self.clue.env.create(repos_dir=self.repos_dir)
         inputs = self.inputs()
         inputs['repos'] = {
             'core': {

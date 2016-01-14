@@ -15,7 +15,7 @@
 ############
 
 
-def after_setup(loader, **kwargs):
+def after_env_create(loader, **kwargs):
     branches_dir = loader.storage_dir / 'branches'
     branches_dir.mkdir_p()
 

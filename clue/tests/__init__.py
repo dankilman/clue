@@ -95,7 +95,7 @@ class BaseTest(unittest.TestCase):
                      register_python_argcomplete=None,
                      virtualenv_name=None):
         try:
-            self.clue.setup(repos_dir=self.repos_dir)
+            self.clue.env.create(repos_dir=self.repos_dir)
             inputs = self.inputs()
             requirements = requirements or []
             constraints = constraints or []

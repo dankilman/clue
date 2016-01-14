@@ -23,7 +23,7 @@ class TestCompletion(tests.BaseTest):
 
     def setUp(self):
         super(TestCompletion, self).setUp()
-        self.clue.setup(repos_dir=self.repos_dir)
+        self.clue.env.create(repos_dir=self.repos_dir)
         inputs = self.inputs()
         inputs['repos'] = {'core': {'cloudify-dsl-parser': {}}}
         self.set_inputs(inputs)
@@ -32,18 +32,18 @@ class TestCompletion(tests.BaseTest):
         self.verbose_args = ['-v', '--verbose']
 
     def test_clue(self):
-        builtin = ['setup', 'init', 'status', 'env'] + self.help_args
+        builtin = ['init', 'status', 'env'] + self.help_args
         user = ['git', 'nose', 'pip', 'install']
         expected = builtin + user
         self.assert_completion(expected=expected)
 
-    def test_setup(self):
+    def test_env_create(self):
         builtin = ['--storage-dir', '-s', '--editable', '-e', '--reset', '-r',
                    '-n', '--name']
         builtin += self.help_args
         user = ['-d', '--repos-dir']
         expected = builtin + user
-        self.assert_completion(expected=expected, args=['setup'])
+        self.assert_completion(expected=expected, args=['env', 'create'])
 
     def test_git(self):
         builtin = self.help_args

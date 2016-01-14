@@ -18,7 +18,7 @@ name: clue
 blueprint_path: cloudify-dev/blueprint.yaml
 user_config_path: { env: [CLUE_CONFIG_PATH, ~/.clue] }
 
-setup:
+env_create:
   args:
     - name: [-d, --repos-dir]
       help: where to clone stuff to
@@ -28,7 +28,7 @@ setup:
     branches_dir: { concat: [{ loader: storage_dir }, '/branches'] }
 
 hooks:
-  after_setup: clue.hooks:after_setup
+  after_env_create: clue.hooks:after_env_create
   before_init: clue.hooks:before_init
 
 templates:
