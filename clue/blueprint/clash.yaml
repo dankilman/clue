@@ -108,10 +108,6 @@ commands:
       node_ids: [{ arg: package }]
     event_cls: clue.output:NoseEvent
 
-ignored_modules:
-  - cloudify_agent.operations
-  - cloudify_agent.installer.operations
-
 task:
   retries: 5
   retry_interval: 1
