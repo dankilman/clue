@@ -30,11 +30,12 @@ print_git_branch_state()
     program='''
 import os
 import sys
-output=os.environ["PS1"]
-output=output.replace("\\[", "")
-output=output.replace("\\]", "")
-output=output.replace("${__git_ps1_branch_name}",
-                      os.environ.get("__git_ps1_branch_name"))
+output = os.environ["PS1"]
+output = output.replace("\\[", "")
+output = output.replace("\\]", "")
+branch_name = os.environ.get("__git_ps1_branch_name")
+if branch_name:
+    output = output.replace("${__git_ps1_branch_name}", branch_name)
 sys.stdout.write(output)
 '''
     output=$(python -c "$program")
