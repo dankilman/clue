@@ -117,9 +117,14 @@ class TestGit(tests.BaseTest):
         test_branches = {
             'cloudify-rest-client': '3.3.1-build'
         }
+        test_branches2 = {
+            'branch': '3.3.1-build',
+            'repos': ['cloudify-rest-client']
+        }
         branches_file = self.workdir / 'branches.yaml'
         branches_file.write_text(yaml.safe_dump({
-            'test': test_branches
+            'test': test_branches,
+            'test2': test_branches2
         }))
 
         def assert_master():
@@ -150,6 +155,10 @@ class TestGit(tests.BaseTest):
         assert_branches_file()
         self.clue.git.checkout('.3.1-build')
         assert_custom()
+        self.clue.git.checkout('master')
+        assert_master()
+        self.clue.git.checkout('test2')
+        assert_branches_file()
         self.clue.git.checkout('master')
         assert_master()
         with misc_repo_dir:

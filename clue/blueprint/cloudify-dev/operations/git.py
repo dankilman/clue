@@ -118,6 +118,7 @@ def status(git_prompt_paths, **_):
 @operation
 def checkout(repo_type, branch, **_):
     git = _git()
+    default_branch = ctx.node.properties['branch']
     branches_file = os.path.expanduser(ctx.node.properties['branches_file'])
     branches = {}
     if os.path.exists(branches_file):
@@ -126,12 +127,15 @@ def checkout(repo_type, branch, **_):
     if branch in branches:
         branches_set = branches[branch]
         name = ctx.node.properties['name']
-        if name in branches_set:
-            branch = branches_set[name]
+        if all(k in branches_set for k in ['branch', 'repos']):
+            if name in branches_set['repos']:
+                branch = branches_set['branch']
+            else:
+                branch = default_branch
         else:
-            branch = ctx.node.properties['branch']
+            branch = branches_set.get(name, default_branch)
     elif branch == 'default':
-        branch = ctx.node.properties['branch']
+        branch = default_branch
     elif repo_type == 'misc':
         return
     elif repo_type not in ['core', 'plugin']:
