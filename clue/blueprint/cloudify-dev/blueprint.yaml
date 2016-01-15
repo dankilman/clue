@@ -16,15 +16,31 @@
 
 tosca_definitions_version: cloudify_dsl_1_2
 
+description: |
+  Each input specifies a different configurable aspect of the development
+  environment managed by clue.
+
+  Each time you make a modification to one of the inputs, 'clue apply' should
+  be executed. Make sure you 'clue env use' the right environment if you have
+  more than one environment.
+
+  Generally, most inputs are additive. e.g. if you remove a repo, it will not
+  be deleted, it will simply not be managed by clue anymore.
+
+  Moreover, some operations on the environment have to be performed manually.
+  e.g. if you change an organization for a repo, clue will not re-clone
+  the repo from the new organization. You will need to manually remove the existing
+  directory, so that clue can fetch it from the new organization.
+
 imports:
   - http://www.getcloudify.org/spec/cloudify/3.3/types.yaml
 
 inputs:
   repos:
-    description: >
-      Based on this dict, before the local workflow environment
-      is initialized, several node templates get generated to reflect
-      the repositories and python packages specified in this input.
+    description: |
+      Managed GitHub repositories.
+      Each specified repo will be cloned to 'repos_dir' if it doesn't exist
+      there already.
     default:
       cloudify-dsl-parser:
         type: core
@@ -133,41 +149,55 @@ inputs:
           organization: dankilman
         python: false
   virtualenv_name:
-    description: The virtualenv name to pass to mkvirtualenv
+    description: |
+      The virtualenv name in which all managed python packages will be installed
+      in editable mode.
+      The virtualenv will be created using virtualenvwrapper, if doesn't exist already.
     default: cloudify
   repos_dir:
-    description: directory to contain all closed repositories
+    description: |
+      Directory that contains all managed repositories.
+      Each repo will be cloned to this directory if it doesn't exist there already.
   organization:
-    description: defaulty organization for cloned repos
+    description: |
+      Default organization for cloned repos.
     default: cloudify-cosmo
   clone_method:
-    description: clone github repos using ssh or https
+    description: |
+      Clone GitHub repos using 'ssh' or 'https'.
     default: https
   branches_file:
-    description: path to yaml file with branch sets
+    description: |
+      Path to yaml file with branch sets.
+      A default empty file is generated for each newly created env next to the
+      generated inputs file.
   virtualenvwrapper_path:
-    description: >
-      path to virtualenvwrapper script to be sourced before creating
-      the virtualenv
+    description: |
+      Path to virtualenvwrapper script to be sourced before creating
+      the virtualenv.
+      If virtualenvwrapper is globally installed, and virtualevnwrapper.sh
+      exists in path, simply specifying 'virtualenvwrapper.sh' as the value
+      should suffice.
     default: virtualenvwrapper.sh
   git_prompt_paths:
-    description: >
+    description: |
+      Path to git prompt shell script.
       Used to display git status branch state (using output from __git_ps1).
-      Iterates through options, and uses the first one found.
+      Iterates through paths, and uses the first one found.
       If none is found, falls back to a simple 'git rev-parse' based method.
     default:
     - /usr/share/git/completion/git-prompt.sh
     - /usr/lib/git-core/git-sh-prompt
   register_python_argcomplete:
-    description: >
-      names to register with python arg-complete when on virtualenv
-      postactivate.
+    description: |
+      Names to register with python argcomplete when the virtualenv is activated.
     default:
     - cfy
     - claw
     - clue
   requirements:
-    description: requirements to install in virtualenv
+    description: |
+      Requirements to install in virtualenv.
     default:
     - tox
     - testtools
@@ -177,7 +207,8 @@ inputs:
     - mock==1.0.1
     - unittest2
   constraints:
-    description: constraints for all pip install commands
+    description: |
+      Constraints for all pip install commands.
     default:
     - requests==2.7.0
     - Flask-RESTful==0.2.5
@@ -187,7 +218,10 @@ inputs:
     - elasticsearch==1.6.0
     - virtualenv>=13.1.2
   git_config:
-    description: git config to apply to all repos
+    description: |
+      Git config to apply to all repos.
+      e.g. "user.name: John Doe" will be set using
+      "git config user.name "John Doe"
     default: {}
 
 node_types:
