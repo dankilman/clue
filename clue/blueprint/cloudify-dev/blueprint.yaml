@@ -158,7 +158,6 @@ inputs:
     default:
     - /usr/share/git/completion/git-prompt.sh
     - /usr/lib/git-core/git-sh-prompt
-    - /etc/bash_completion.d/git-prompt
   register_python_argcomplete:
     description: >
       names to register with python arg-complete when on virtualenv
