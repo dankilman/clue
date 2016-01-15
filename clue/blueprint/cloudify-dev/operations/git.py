@@ -88,9 +88,16 @@ def pull(**_):
 
 
 @operation
-def status(git_prompt_path, **_):
+def status(git_prompt_paths, **_):
     git = _git()
-    if os.path.exists(git_prompt_path):
+
+    for git_prompt_path in git_prompt_paths:
+        if os.path.exists(os.path.expanduser(git_prompt_path)):
+            break
+    else:
+        git_prompt_path = None
+
+    if git_prompt_path:
         repo_location = ctx.instance.runtime_properties['repo_location']
         script_path = ctx.download_resource_and_render(
             'resources/git-branch-state.sh', template_variables={

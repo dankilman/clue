@@ -99,13 +99,13 @@ class TestGit(tests.BaseTest):
         repo_dir = self._install()
         output = self.clue.git.status().stdout.strip()
         self.assertRegexpMatches(output,
-                                 r'.*cloudify-rest-client.*\| master')
+                                 r'.*cloudify-rest-client.*\| .*master')
         self.clue.git.checkout('3.3.1-build')
         with repo_dir:
             git.reset('HEAD~')
         output = self.clue.git.status().stdout.strip()
         self.assertRegexpMatches(output,
-                                 r'.*cloudify-rest-client.*\| 3.3.1-build')
+                                 r'.*cloudify-rest-client.*\| .*3.3.1-build')
         self.assertRegexpMatches(output,
                                  r'.*cloudify-rest-client.*\| .*'
                                  r'M.*cloudify_rest_client/client.py')
