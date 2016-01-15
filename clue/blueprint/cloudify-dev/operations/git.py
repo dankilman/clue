@@ -88,9 +88,23 @@ def pull(**_):
 
 
 @operation
-def status(**_):
+def status(git_prompt_path, **_):
     git = _git()
-    git('rev-parse', '--abbrev-ref', 'HEAD').wait()
+    if os.path.exists(git_prompt_path):
+        repo_location = ctx.instance.runtime_properties['repo_location']
+        script_path = ctx.download_resource_and_render(
+            'resources/git-branch-state.sh', template_variables={
+                'git_prompt_path': git_prompt_path,
+                'repo_location': repo_location})
+        try:
+            os.chmod(script_path, 0o0755)
+            script = sh.Command(script_path)
+            branch_state = script().stdout.strip()
+            ctx.logger.info(branch_state)
+        finally:
+            os.remove(script_path)
+    else:
+        git('rev-parse', '--abbrev-ref', 'HEAD').wait()
     git.status(s=True).wait()
 
 

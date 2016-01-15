@@ -150,6 +150,10 @@ inputs:
       path to virtualenvwrapper script to be sourced before creating
       the virtualenv
     default: virtualenvwrapper.sh
+  git_prompt_path:
+    description: >
+      Used to display git status branch state (using output from __git_ps1)
+    default: /usr/share/git/completion/git-prompt.sh
   register_python_argcomplete:
     description: >
       names to register with python arg-complete when on virtualenv
@@ -222,6 +226,8 @@ node_types:
           build branch names.
       git_config:
         default: { get_input: git_config }
+      git_prompt_path:
+        default: { get_input: git_prompt_path }
     interfaces:
       cloudify.interfaces.lifecycle:
         create:
@@ -250,7 +256,9 @@ node_types:
           inputs: {}
         status:
           implementation: self.operations.git.status
-          inputs: {}
+          inputs:
+            git_prompt_path:
+              default: { get_property: [SELF, git_prompt_path] }
         checkout:
           implementation: self.operations.git.checkout
           inputs:
