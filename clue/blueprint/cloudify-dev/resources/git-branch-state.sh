@@ -33,7 +33,8 @@ import sys
 output=os.environ["PS1"]
 output=output.replace("\\[", "")
 output=output.replace("\\]", "")
-output=output.replace("${__git_ps1_branch_name}", os.environ["__git_ps1_branch_name"])
+output=output.replace("${__git_ps1_branch_name}",
+                      os.environ.get("__git_ps1_branch_name"))
 sys.stdout.write(output)
 '''
     output=$(python -c "$program")
