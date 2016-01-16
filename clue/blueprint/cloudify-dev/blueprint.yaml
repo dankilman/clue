@@ -217,6 +217,7 @@ inputs:
     - pywinrm==0.0.3
     - elasticsearch==1.6.0
     - virtualenv>=13.1.2
+    - psutil==3.3.0
   git_config:
     description: |
       Git config to apply to all repos.
