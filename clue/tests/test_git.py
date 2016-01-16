@@ -168,7 +168,11 @@ class TestGit(tests.BaseTest):
         assert_master()
 
     def test_rebase(self):
-        core_repo_dir, _, _ = self._install_repo_types()
+        git_config = {
+            'user.name': 'John Doe',
+            'user.email': 'john.doe@example.com'
+        }
+        core_repo_dir, _, _ = self._install_repo_types(git_config=git_config)
         test_branches = {
             'cloudify-rest-client': '3.2.1-build'
         }
@@ -239,7 +243,7 @@ class TestGit(tests.BaseTest):
                           clone_method=clone_method)
         return repo_dir
 
-    def _install_repo_types(self):
+    def _install_repo_types(self, git_config=None):
         core_repo = 'cloudify-rest-client'
         core_repo_dir = self.repos_dir / core_repo
         plugin_repo = 'cloudify-script-plugin'
@@ -251,5 +255,5 @@ class TestGit(tests.BaseTest):
             plugin_repo: {'type': 'plugin', 'python': False},
             misc_repo: {'python': False}
         }
-        self.clue_install(repos=repos)
+        self.clue_install(repos=repos, git_config=git_config)
         return core_repo_dir, plugin_repo_dir, misc_repo_dir
