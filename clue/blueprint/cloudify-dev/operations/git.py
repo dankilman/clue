@@ -175,22 +175,44 @@ def checkout(repo_type, branch, **_):
 
 
 @operation
-def rebase(branch, repo_type, **_):
+def squash(fork_point, **_):
+    if not _validate_branch_set():
+        return
+    git = _git(log_out=False)
+    merge_base = git.bake('merge-base', fork_point=True)(
+        fork_point).stdout.strip()
+    commits = git.bake(
+        'rev-list',
+        ancestry_path=True,
+    )('{0}..HEAD'.format(merge_base)).stdout.strip().split('\n')
+    commits = [c.strip() for c in commits]
+    if len(commits) == 1:
+        ctx.logger.info('Single commit found. Skipping squash.')
+        return
+    commit_message_sha = commits[-1]
+    commit_message = git.log(commit_message_sha,
+                             format='%B', n=1).stdout.strip()
+    git = _git(log_out=True)
+    ctx.logger.info('Squashing with merge_base: {0} and commit message: {1}'
+                    .format(merge_base, commit_message))
+    git.reset(merge_base, soft=True).wait()
+    git.commit(message=commit_message).wait()
+
+
+@operation
+def reset(hard, origin, **_):
+    if not _validate_branch_set():
+        return
     git = _git()
-    current_branch_set = ctx.instance.runtime_properties.get(
-        'current_branch_set')
-    current_branch_set_branch = ctx.instance.runtime_properties.get(
-        'current_branch_set_branch')
-    if not (current_branch_set and current_branch_set_branch):
-        return
     current_branch = _current_branch()
-    if current_branch_set_branch != current_branch:
-        ctx.logger.warn(
-            'Current branch: "{0}" does not match current branch set: "{1}" '
-            'branch "{2}"'.format(current_branch,
-                                  current_branch_set,
-                                  current_branch_set_branch))
+    git.reset.bake(hard=hard)('{0}/{1}'.format(origin, current_branch)).wait()
+
+
+@operation
+def rebase(branch, repo_type, **_):
+    if not _validate_branch_set():
         return
+    git = _git()
     try:
         branch = _fix_branch_name(repo_type, branch)
         git.rebase(branch).wait()
@@ -200,6 +222,24 @@ def rebase(branch, repo_type, **_):
             git.rebase(abort=True).wait()
         except:
             pass
+
+
+def _validate_branch_set():
+    current_branch_set = ctx.instance.runtime_properties.get(
+            'current_branch_set')
+    current_branch_set_branch = ctx.instance.runtime_properties.get(
+            'current_branch_set_branch')
+    if not (current_branch_set and current_branch_set_branch):
+        return False
+    current_branch = _current_branch()
+    if current_branch_set_branch != current_branch:
+        ctx.logger.warn(
+            'Current branch: "{0}" does not match current branch set: "{1}" '
+            'branch "{2}"'.format(current_branch,
+                                  current_branch_set,
+                                  current_branch_set_branch))
+        return False
+    return True
 
 
 @operation

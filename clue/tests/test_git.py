@@ -219,6 +219,12 @@ class TestGit(tests.BaseTest):
         self.assertIn('Failed rebase, aborting', output)
         self.assertFalse((core_repo_dir / '.git' / 'rebase-apply').isdir())
 
+    def test_squash(self):
+        pass
+
+    def test_reset(self):
+        pass
+
     def test_diff(self):
         self._install_repo_types()
         self.clue.git.checkout('.3.1-build')

@@ -82,6 +82,35 @@ commands:
         type_names: [git_repo]
       event_cls: clue.output:NamedNodeEvent
 
+    squash:
+      args:
+        - name: --fork-point
+          default: master
+          help: squash with this fork-point ref as merge base
+      workflow: execute_operation
+      parameters:
+        operation: git.squash
+        operation_kwargs:
+          fork_point: { arg: fork_point }
+        type_names: [git_repo]
+      event_cls: clue.output:NamedNodeEvent
+
+    reset:
+      args:
+        - name: --origin
+          help: reset from this base
+          default: origin
+        - name: hard
+          default: false
+      workflow: execute_operation
+      parameters:
+        operation: git.reset
+        operation_kwargs:
+          origin: { arg: origin }
+          hard: { arg: hard }
+        type_names: [git_repo]
+      event_cls: clue.output:NamedNodeEvent
+
     rebase:
       args:
         - name: branch

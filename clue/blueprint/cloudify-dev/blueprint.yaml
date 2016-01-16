@@ -290,9 +290,7 @@ node_types:
             git_config:
               default: { get_property: [SELF, git_config] }
       git:
-        pull:
-          implementation: self.operations.git.pull
-          inputs: {}
+        pull: self.operations.git.pull
         status:
           implementation: self.operations.git.status
           inputs:
@@ -325,6 +323,15 @@ node_types:
             repo_type:
               default: { get_property: [SELF, repo_type ] }
             branch: {}
+        squash:
+          implementation: self.operations.git.squash
+          inputs:
+            fork_point: {}
+        reset:
+          implementation: self.operations.git.reset
+          inputs:
+            origin: {}
+            hard: {}
 
   virtualenv:
     derived_from: cloudify.nodes.Root

@@ -48,7 +48,8 @@ class TestCompletion(tests.BaseTest):
 
     def test_git(self):
         builtin = self.help_args
-        user = ['checkout', 'diff', 'pull', 'status', 'rebase']
+        user = ['checkout', 'diff', 'pull', 'status', 'rebase', 'squash',
+                'reset']
         expected = builtin + user
         self.assert_completion(expected=expected,
                                args=['git'])
