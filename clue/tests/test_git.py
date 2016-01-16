@@ -167,6 +167,54 @@ class TestGit(tests.BaseTest):
         self.clue.git.checkout('default')
         assert_master()
 
+    def test_rebase(self):
+        core_repo_dir, _, _ = self._install_repo_types()
+        test_branches = {
+            'cloudify-rest-client': '3.2.1-build'
+        }
+        branches_file = self.workdir / 'branches.yaml'
+        branches_file.write_text(yaml.safe_dump({
+            'test': test_branches,
+        }))
+        # rebase with no "active" branch set should not do anything
+        output = self.clue.git.rebase('3.2.1-build').stdout.strip()
+        self.assertEqual(len(output), 0)
+
+        # only "active" branch set repos should be affected
+        self.clue.git.checkout('test')
+        output = self.clue.git.rebase('3.2.1-build').stdout.strip()
+        self.assertEqual(len(output.split('\n')), 1)
+        self.assertIn('cloudify-rest-client', output)
+        self.assertIn('Current branch 3.2.1-build is up to date.', output)
+
+        # test repo type consideration (.2.1-build for core type should
+        # transform to 3.2.1-build)
+        output = self.clue.git.rebase('.2.1-build').stdout.strip()
+        self.assertEqual(len(output.split('\n')), 1)
+        self.assertIn('cloudify-rest-client', output)
+        self.assertIn('Current branch 3.2.1-build is up to date.', output)
+
+        # being on a different branch then the one from the active state
+        # should result in a warning, and no state change
+        with core_repo_dir:
+            git.checkout('3.3')
+        output = self.clue.git.rebase('3.2.1-build').stdout.strip()
+        self.assertEqual(len(output.split('\n')), 1)
+        self.assertIn('cloudify-rest-client', output)
+        self.assertIn('does not match current branch set', output)
+
+        # 'clue git checkout' of anything that is not a repo set, should
+        # remove "active" branch set state
+        self.clue.git.checkout('default')
+        output = self.clue.git.rebase('3.2.1-build').stdout.strip()
+        self.assertEqual(len(output), 0)
+
+        # Unclean re-bases should be aborted
+        self.clue.git.checkout('test')
+        output = self.clue.git.rebase('master').stdout.strip()
+        self.assertIn('Failed rebase, aborting', output)
+        self.assertFalse((core_repo_dir / '.git' / 'rebase-apply').isdir())
+
     def test_diff(self):
         self._install_repo_types()
         self.clue.git.checkout('.3.1-build')

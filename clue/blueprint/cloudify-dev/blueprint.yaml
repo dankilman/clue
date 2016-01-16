@@ -319,6 +319,12 @@ node_types:
               default: { get_property: [SELF, repo_type] }
             revision_range:
               default: ''
+        rebase:
+          implementation: self.operations.git.rebase
+          inputs:
+            repo_type:
+              default: { get_property: [SELF, repo_type ] }
+            branch: {}
 
   virtualenv:
     derived_from: cloudify.nodes.Root

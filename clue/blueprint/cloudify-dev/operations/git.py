@@ -27,12 +27,20 @@ from cloudify.decorators import operation
 from common import bake
 
 
-def _git():
+def _git(log_out=True):
     repo_location = ctx.instance.runtime_properties['repo_location']
-    return bake(sh.git).bake(
+    git = sh.git
+    if log_out:
+        git = bake(git)
+    return git.bake(
         '--no-pager',
         '--git-dir', path(repo_location) / '.git',
         '--work-tree', repo_location)
+
+
+def _current_branch():
+    git = _git(log_out=False)
+    return git('rev-parse', '--abbrev-ref', 'HEAD').stdout.strip()
 
 
 @operation
@@ -107,11 +115,11 @@ def status(git_prompt_paths, **_):
             os.chmod(script_path, 0o0755)
             script = sh.Command(script_path)
             branch_state = script().stdout.strip()
-            ctx.logger.info(branch_state)
         finally:
             os.remove(script_path)
     else:
-        git('rev-parse', '--abbrev-ref', 'HEAD').wait()
+        branch_state = _current_branch()
+    ctx.logger.info(branch_state)
     git.status(s=True).wait()
 
 
@@ -121,6 +129,7 @@ def checkout(repo_type, branch, **_):
     default_branch = ctx.node.properties['branch']
     branches_file = os.path.expanduser(ctx.node.properties['branches_file'])
     branches = {}
+    current_branch_set = None
     if os.path.exists(branches_file):
         with open(branches_file) as f:
             branches = yaml.safe_load(f) or {}
@@ -129,11 +138,16 @@ def checkout(repo_type, branch, **_):
         name = ctx.node.properties['name']
         if all(k in branches_set for k in ['branch', 'repos']):
             if name in branches_set['repos']:
+                current_branch_set = branch
                 branch = branches_set['branch']
             else:
                 branch = default_branch
         else:
-            branch = branches_set.get(name, default_branch)
+            if name in branches_set:
+                current_branch_set = branch
+                branch = branches_set[name]
+            else:
+                branch = default_branch
     elif branch == 'default':
         branch = default_branch
     elif repo_type == 'misc':
@@ -147,8 +161,45 @@ def checkout(repo_type, branch, **_):
         branch = _fix_branch_name(repo_type, branch)
     try:
         git.checkout(branch).wait()
+        if current_branch_set:
+            ctx.instance.runtime_properties[
+                'current_branch_set'] = current_branch_set
+            ctx.instance.runtime_properties[
+                'current_branch_set_branch'] = branch
+        else:
+            ctx.instance.runtime_properties.pop('current_branch_set', None)
+            ctx.instance.runtime_properties.pop('current_branch_set_branch',
+                                                None)
     except sh.ErrorReturnCode:
         ctx.logger.error('Could not checkout branch {0}'.format(branch))
+
+
+@operation
+def rebase(branch, repo_type, **_):
+    git = _git()
+    current_branch_set = ctx.instance.runtime_properties.get(
+        'current_branch_set')
+    current_branch_set_branch = ctx.instance.runtime_properties.get(
+        'current_branch_set_branch')
+    if not (current_branch_set and current_branch_set_branch):
+        return
+    current_branch = _current_branch()
+    if current_branch_set_branch != current_branch:
+        ctx.logger.warn(
+            'Current branch: "{0}" does not match current branch set: "{1}" '
+            'branch "{2}"'.format(current_branch,
+                                  current_branch_set,
+                                  current_branch_set_branch))
+        return
+    try:
+        branch = _fix_branch_name(repo_type, branch)
+        git.rebase(branch).wait()
+    except Exception as e:
+        ctx.logger.error('Failed rebase, aborting: {0}'.format(e))
+        try:
+            git.rebase(abort=True).wait()
+        except:
+            pass
 
 
 @operation
@@ -171,6 +222,8 @@ def diff(repo_type, revision_range, **_):
 
 def _fix_branch_name(repo_type, branch):
     if not branch.startswith('.'):
+        return branch
+    if repo_type not in ['core', 'plugin']:
         return branch
     template = '3{}' if repo_type == 'core' else '1{}'
     return template.format(branch)
