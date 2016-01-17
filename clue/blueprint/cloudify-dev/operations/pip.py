@@ -147,7 +147,8 @@ def configure_virtualenv(
 
     # git-retag-cloudify
     retag_cloudify_target_path = virtualenv_bin / 'git-retag-cloudify'
-    ctx.download_resource(
+    ctx.download_resource_and_render(
         git_retag_cloudify_resource_path,
+        template_variables={'sys_executable': sys.executable},
         target_path=retag_cloudify_target_path)
     os.chmod(retag_cloudify_target_path, 0755)
