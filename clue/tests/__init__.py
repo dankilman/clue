@@ -33,7 +33,7 @@ VIRTUALENVWRAPPER_VIRTUALENV = 'VIRTUALENVWRAPPER_VIRTUALENV'
 class BaseTest(unittest.TestCase):
 
     verbose = True
-    default_clone_method = None
+    default_clone_method = os.environ.get('CLUE_TEST_CLONE_METHOD')
 
     def setUp(self):
         self.workdir = path(tempfile.mkdtemp(prefix='clue-tests-'))

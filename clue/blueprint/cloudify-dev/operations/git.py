@@ -177,7 +177,7 @@ def checkout(repo_type, branch, **_):
 
 
 @operation
-def squash(fork_point, **_):
+def squash(base, repo_type, **_):
     if not _validate_branch_set():
         return
     git_version = ctx.instance.runtime_properties['git_version']
@@ -185,8 +185,9 @@ def squash(fork_point, **_):
         ctx.logger.warn('git version >= 1.9 is required for squash.')
         return
     git = _git(log_out=False)
+    base = _fix_branch_name(repo_type, base)
     merge_base = git.bake('merge-base', fork_point=True)(
-        fork_point).stdout.strip()
+        base).stdout.strip()
     commits = git.bake(
         'rev-list',
         ancestry_path=True,
@@ -215,13 +216,13 @@ def reset(hard, origin, **_):
 
 
 @operation
-def rebase(branch, repo_type, **_):
+def rebase(base, repo_type, **_):
     if not _validate_branch_set():
         return
     git = _git()
     try:
-        branch = _fix_branch_name(repo_type, branch)
-        git.rebase(branch).wait()
+        base = _fix_branch_name(repo_type, base)
+        git.rebase(base).wait()
     except Exception as e:
         ctx.logger.error('Failed rebase, aborting: {0}'.format(e))
         try:

@@ -86,7 +86,7 @@ commands:
 
     squash:
       args:
-        - name: --fork-point
+        - name: [-b, --base]
           default: master
           help: squash with this fork-point ref as merge base
       task: *zero_retries_task
@@ -94,7 +94,7 @@ commands:
       parameters:
         operation: git.squash
         operation_kwargs:
-          fork_point: { arg: fork_point }
+          base: { arg: base }
         type_names: [git_repo]
       event_cls: clue.output:NamedNodeEvent
 
@@ -117,14 +117,15 @@ commands:
 
     rebase:
       args:
-        - name: branch
-          help: branch name to rebase on top of
+        - name: [-b, --base]
+          help: base name to rebase on top of
+          default: master
       task: *zero_retries_task
       workflow: execute_operation
       parameters:
         operation: git.rebase
         operation_kwargs:
-          branch: { arg: branch }
+          base: { arg: base }
         type_names: [git_repo]
       event_cls: clue.output:NamedNodeEvent
 

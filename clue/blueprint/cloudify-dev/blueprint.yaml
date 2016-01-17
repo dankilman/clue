@@ -322,11 +322,13 @@ node_types:
           inputs:
             repo_type:
               default: { get_property: [SELF, repo_type ] }
-            branch: {}
+            base: {}
         squash:
           implementation: self.operations.git.squash
           inputs:
-            fork_point: {}
+            repo_type:
+              default: { get_property: [SELF, repo_type ] }
+            base: {}
         reset:
           implementation: self.operations.git.reset
           inputs:
