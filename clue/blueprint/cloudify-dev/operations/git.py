@@ -180,6 +180,10 @@ def checkout(repo_type, branch, **_):
 def squash(fork_point, **_):
     if not _validate_branch_set():
         return
+    git_version = ctx.instance.runtime_properties['git_version']
+    if git_version < 'git version 1.9':
+        ctx.logger.warn('git version >= 1.9 is required for squash.')
+        return
     git = _git(log_out=False)
     merge_base = git.bake('merge-base', fork_point=True)(
         fork_point).stdout.strip()
