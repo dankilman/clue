@@ -1,4 +1,4 @@
-#! {{sys_executable}}
+#! /usr/bin/env python
 ########
 # Copyright (c) 2016 GigaSpaces Technologies Ltd. All rights reserved
 #

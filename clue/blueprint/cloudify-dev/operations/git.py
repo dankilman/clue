@@ -15,7 +15,6 @@
 ############
 
 import os
-import sys
 
 import sh
 import yaml
@@ -73,10 +72,9 @@ def configure(commit_msg_resource_path, git_config, **_):
 
     # configure commit-msg hook
     commit_msg_hook_path = repo_location / '.git' / 'hooks' / 'commit-msg'
-    ctx.download_resource_and_render(
-        commit_msg_resource_path,
-        template_variables={'sys_executable': sys.executable},
-        target_path=commit_msg_hook_path)
+    commit_msg_hook = ctx.get_resource(commit_msg_resource_path)
+    with open(commit_msg_hook_path, 'w') as f:
+        f.write(commit_msg_hook)
     os.chmod(commit_msg_hook_path, 0755)
 
     # git config
