@@ -77,10 +77,19 @@ class TestGit(tests.BaseTest):
             'user.name': name,
             'user.email': email
         })
-        commit_msg_path = repo_dir / '.git' / 'hooks' / 'commit-msg'
-        self.assertTrue(commit_msg_path.exists())
-        self.assertEqual(commit_msg_path.stat().st_mode & 0755, 0755)
+
         with repo_dir:
+            # Test commit message hook
+            jira = 'CFY-10000'
+            branch = '{}-hello-world'.format(jira)
+            commit_message = 'my commit message'
+            git.checkout('-b', branch)
+            (repo_dir / 'tox.ini').write_text('testing 123')
+            git.commit('-am', commit_message)
+            self.assertEqual(self._log_message(),
+                             '{} {}'.format(jira, commit_message))
+
+            # Test git config
             self.assertEqual(name, git.config('user.name').stdout.strip())
             self.assertEqual(email, git.config('user.email').stdout.strip())
 
@@ -168,18 +177,8 @@ class TestGit(tests.BaseTest):
         assert_master()
 
     def test_rebase(self):
-        git_config = {
-            'user.name': 'John Doe',
-            'user.email': 'john.doe@example.com'
-        }
-        core_repo_dir, _, _ = self._install_repo_types(git_config=git_config)
-        test_branches = {
-            'cloudify-rest-client': '3.2.1-build'
-        }
-        branches_file = self.workdir / 'branches.yaml'
-        branches_file.write_text(yaml.safe_dump({
-            'test': test_branches,
-        }))
+        core_repo_dir, _, _ = self._install_repo_types_with_branches()
+
         # rebase with no "active" branch set should not do anything
         output = self.clue.git.rebase('3.2.1-build').stdout.strip()
         self.assertEqual(len(output), 0)
@@ -220,10 +219,70 @@ class TestGit(tests.BaseTest):
         self.assertFalse((core_repo_dir / '.git' / 'rebase-apply').isdir())
 
     def test_squash(self):
-        pass
+        branch = 'test_branch'
+        core_repo_dir, _, _ = self._install_repo_types_with_branches(
+            branch=branch)
+
+        # squash with no "active" branch set should not do anything
+        output = self.clue.git.squash().stdout.strip()
+        self.assertEqual(len(output), 0)
+
+        with core_repo_dir:
+            git.checkout.bake(b=True)(branch)
+            temp_file = core_repo_dir / 'temp'
+            temp_file.write_text('temp')
+            commit_message = 'real_commit'
+            git.add(temp_file)
+            git.commit('-m', commit_message)
+            initial_sha = self._current_sha()
+            self._make_modifications(core_repo_dir)
+            after_commits_sha = self._current_sha()
+            self.assertNotEqual(initial_sha, after_commits_sha)
+
+        # squash command requires active branch set
+        self.clue.git.checkout('test')
+
+        # Test squash when there is more than 1 commit
+        self.clue.git.squash()
+        after_squash_sha = self._current_sha()
+        with core_repo_dir:
+            self.assertNotEqual(after_commits_sha, self._current_sha())
+            current_commit_message = self._log_message(after_squash_sha)
+            self.assertEqual(commit_message, current_commit_message)
+
+        # Test squash with no expected change (previous changes were squashed
+        # into 1 commit)
+        self.clue.git.squash()
+        self.assertEqual(after_squash_sha, self._current_sha())
 
     def test_reset(self):
-        pass
+        core_repo_dir, _, _ = self._install_repo_types_with_branches()
+
+        # reset with no "active" branch set should not do anything
+        output = self.clue.git.reset().stdout.strip()
+        self.assertEqual(len(output), 0)
+
+        # reset command requires active branch set
+        self.clue.git.checkout('test')
+
+        def test_reset(hard=False, origin=None):
+            with core_repo_dir:
+                initial_sha = self._current_sha()
+                self._make_modifications(repo_dir=core_repo_dir,
+                                         skip_last_commit=hard)
+                self.assertNotEqual(initial_sha, self._current_sha())
+            command = self.clue.git.reset.bake(hard=hard)
+            if origin:
+                command.bake(origin=origin)
+            output = command().stdout.strip()
+            if hard:
+                self.assertNotIn('Unstaged changes', output)
+            with core_repo_dir:
+                self.assertEqual(initial_sha, self._current_sha())
+
+        test_reset(hard=False)
+        test_reset(hard=True)
+        test_reset(origin='origin')
 
     def test_diff(self):
         self._install_repo_types()
@@ -249,6 +308,21 @@ class TestGit(tests.BaseTest):
                           clone_method=clone_method)
         return repo_dir
 
+    def _install_repo_types_with_branches(self, branch='3.2.1-build'):
+        git_config = {
+            'user.name': 'John Doe',
+            'user.email': 'john.doe@example.com'
+        }
+        core, plugin, misc = self._install_repo_types(git_config=git_config)
+        test_branches = {
+            'cloudify-rest-client': branch
+        }
+        branches_file = self.workdir / 'branches.yaml'
+        branches_file.write_text(yaml.safe_dump({
+            'test': test_branches,
+        }))
+        return core, plugin, misc
+
     def _install_repo_types(self, git_config=None):
         core_repo = 'cloudify-rest-client'
         core_repo_dir = self.repos_dir / core_repo
@@ -263,3 +337,23 @@ class TestGit(tests.BaseTest):
         }
         self.clue_install(repos=repos, git_config=git_config)
         return core_repo_dir, plugin_repo_dir, misc_repo_dir
+
+    def _current_sha(self):
+        return git('rev-parse', 'HEAD').stdout.strip()
+
+    def _make_modifications(self, repo_dir, count=3, skip_last_commit=False):
+        with repo_dir:
+            tox_ini = repo_dir / 'tox.ini'
+            for i in range(count):
+                tox_ini_text = tox_ini.text()
+                tox_ini_text = '{}\n{}'.format(tox_ini_text, i)
+                tox_ini.write_text(tox_ini_text)
+                if i == count - 1 and skip_last_commit:
+                    continue
+                git.commit('-am', str(i))
+
+    def _log_message(self, sha=None):
+        if not sha:
+            sha = self._current_sha()
+        return git.bake(no_pager=True).log(sha, n=1,
+                                           format='%B').stdout.strip()

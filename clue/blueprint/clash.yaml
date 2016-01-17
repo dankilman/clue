@@ -32,9 +32,11 @@ hooks:
   before_init: clue.hooks:before_init
 
 templates:
-  - &sequential_tasks
+  - &zero_retries_task
     retries: 0
     retry_interval: 0
+  - &sequential_tasks
+    <<: *zero_retries_task
     thread_pool_size: 1
 
 command_after_init_on_apply: install
@@ -87,6 +89,7 @@ commands:
         - name: --fork-point
           default: master
           help: squash with this fork-point ref as merge base
+      task: *zero_retries_task
       workflow: execute_operation
       parameters:
         operation: git.squash
@@ -100,8 +103,9 @@ commands:
         - name: --origin
           help: reset from this base
           default: origin
-        - name: hard
+        - name: --hard
           default: false
+      task: *zero_retries_task
       workflow: execute_operation
       parameters:
         operation: git.reset
@@ -115,6 +119,7 @@ commands:
       args:
         - name: branch
           help: branch name to rebase on top of
+      task: *zero_retries_task
       workflow: execute_operation
       parameters:
         operation: git.rebase
@@ -128,6 +133,7 @@ commands:
         - name: branch
           help: branch name to checkout
           completer: clue.completion:branches_completer
+      task: *zero_retries_task
       workflow: execute_operation
       parameters:
         allow_kwargs_override: true
