@@ -88,8 +88,7 @@ class GitRepo(object):
     def clone(self):
         git = bake(sh.git)
         ctx.instance.runtime_properties['repo_location'] = self.repo_location
-        ctx.instance.runtime_properties['git_version'] = sh.git(
-                version=True).stdout.strip()
+        self.git_version = sh.git(version=True).stdout.strip()
         if os.path.isdir(self.repo_location):
             return
         if self.clone_method == 'https':
@@ -119,8 +118,7 @@ class GitRepo(object):
         kwargs = {
             'prune': True
         }
-        git_version = ctx.instance.runtime_properties['git_version']
-        if git_version >= 'git version 2.0.0':
+        if self.git_version >= 'git version 2.0.0':
             kwargs['tags'] = True
         self.git.pull(**kwargs).wait()
 
@@ -148,7 +146,7 @@ class GitRepo(object):
 
     def checkout(self, branch):
         default_branch = self.branch
-        current_branch_set = None
+        active_branch_set = None
         branches = {}
         if self.branches_file.exists():
             branches = yaml.safe_load(self.branches_file.text()) or {}
@@ -156,13 +154,13 @@ class GitRepo(object):
             branches_set = branches[branch]
             if all(k in branches_set for k in ['branch', 'repos']):
                 if self.name in branches_set['repos']:
-                    current_branch_set = branch
+                    active_branch_set = branch
                     branch = branches_set['branch']
                 else:
                     branch = default_branch
             else:
                 if self.name in branches_set:
-                    current_branch_set = branch
+                    active_branch_set = branch
                     branch = branches_set[self.name]
                 else:
                     branch = default_branch
@@ -179,15 +177,12 @@ class GitRepo(object):
             branch = self._fix_branch_name(branch)
         try:
             self.git.checkout(branch).wait()
-            if current_branch_set:
-                ctx.instance.runtime_properties[
-                    'current_branch_set'] = current_branch_set
-                ctx.instance.runtime_properties[
-                    'current_branch_set_branch'] = branch
+            if active_branch_set:
+                self.active_branch_set = active_branch_set
+                self.active_branch_set_branch = branch
             else:
-                ctx.instance.runtime_properties.pop('current_branch_set', None)
-                ctx.instance.runtime_properties.pop(
-                    'current_branch_set_branch', None)
+                del self.active_branch_set
+                del self.active_branch_set_branch
         except sh.ErrorReturnCode:
             ctx.logger.error('Could not checkout branch {0}'.format(branch))
 
@@ -213,8 +208,7 @@ class GitRepo(object):
     def squash(self, base):
         if not self._validate_branch_set():
             return
-        git_version = ctx.instance.runtime_properties['git_version']
-        if git_version < 'git version 1.9':
+        if self.git_version < 'git version 1.9':
             ctx.logger.warn('git version >= 1.9 is required for squash.')
             return
         git = self.git_output
@@ -257,11 +251,11 @@ class GitRepo(object):
 
     @property
     def location(self):
-        return os.path.expanduser(ctx.properties['location'])
+        return os.path.expanduser(ctx.node.properties['location'])
 
     @property
     def name(self):
-        return ctx.properties['name']
+        return ctx.node.properties['name']
 
     @property
     def repo_location(self):
@@ -269,31 +263,63 @@ class GitRepo(object):
 
     @property
     def organization(self):
-        return ctx.properties['organization']
+        return ctx.node.properties['organization']
 
     @property
     def branch(self):
-        return ctx.properties['branch']
+        return ctx.node.properties['branch']
 
     @property
     def clone_method(self):
-        return ctx.properties['clone_method']
+        return ctx.node.properties['clone_method']
 
     @property
     def type(self):
-        return ctx.properties['repo_type']
+        return ctx.node.properties['repo_type']
 
     @property
     def git_config(self):
-        return ctx.properties['git_config']
+        return ctx.node.properties['git_config']
 
     @property
     def git_prompt_paths(self):
-        return ctx.properties['git_prompt_paths']
+        return ctx.node.properties['git_prompt_paths']
 
     @property
     def branches_file(self):
-        return path(ctx.properties['branches_file'])
+        return path(ctx.node.properties['branches_file'])
+
+    @property
+    def active_branch_set(self):
+        return ctx.instance.runtime_properties.get('current_branch_set')
+
+    @active_branch_set.setter
+    def active_branch_set(self, value):
+        ctx.instance.runtime_properties['current_branch_set'] = value
+
+    @active_branch_set.deleter
+    def active_branch_set(self):
+        ctx.instance.runtime_properties.pop('current_branch_set', None)
+
+    @property
+    def active_branch_set_branch(self):
+        return ctx.instance.runtime_properties.get('current_branch_set_branch')
+
+    @active_branch_set_branch.setter
+    def active_branch_set_branch(self, value):
+        ctx.instance.runtime_properties['current_branch_set_branch'] = value
+
+    @active_branch_set_branch.deleter
+    def active_branch_set_branch(self):
+        ctx.instance.runtime_properties.pop('current_branch_set_branch', None)
+
+    @property
+    def git_version(self):
+        return ctx.instance.runtime_properties['git_version']
+
+    @git_version.setter
+    def git_version(self, value):
+        ctx.instance.runtime_properties['git_version'] = value
 
     @property
     def current_branch(self):
@@ -308,31 +334,25 @@ class GitRepo(object):
     def git_output(self):
         return self._git(log_out=False)
 
-    @staticmethod
-    def _git(log_out):
-        repo_location = ctx.instance.runtime_properties['repo_location']
+    def _git(self, log_out):
         git = sh.git
         if log_out:
             git = bake(git)
         return git.bake(
                 '--no-pager',
-                '--git-dir', path(repo_location) / '.git',
-                '--work-tree', repo_location)
+                '--git-dir', path(self.repo_location) / '.git',
+                '--work-tree', self.repo_location)
 
     def _validate_branch_set(self):
-        current_branch_set = ctx.instance.runtime_properties.get(
-                'current_branch_set')
-        current_branch_set_branch = ctx.instance.runtime_properties.get(
-                'current_branch_set_branch')
-        if not (current_branch_set and current_branch_set_branch):
+        if not (self.active_branch_set and self.active_branch_set_branch):
             return False
         current_branch = self.current_branch
-        if current_branch_set_branch != current_branch:
+        if self.active_branch_set_branch != current_branch:
             ctx.logger.warn(
                     'Current branch: "{0}" does not match current branch set: '
                     '"{1}" branch "{2}"'.format(current_branch,
-                                                current_branch_set,
-                                                current_branch_set_branch))
+                                                self.active_branch_set,
+                                                self.active_branch_set_branch))
             return False
         return True
 
