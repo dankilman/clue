@@ -269,40 +269,15 @@ node_types:
         default: { get_input: git_prompt_paths }
     interfaces:
       cloudify.interfaces.lifecycle:
-        create:
-          implementation: self.operations.git.clone
-          inputs:
-            location:
-              default: { get_property: [SELF, location] }
-            organization:
-              default: { get_property: [SELF, organization] }
-            repo:
-              default: { get_property: [SELF, name] }
-            branch:
-              default: { get_property: [SELF, branch] }
-            clone_method:
-              default: { get_property: [SELF, clone_method] }
-        configure:
-          implementation: self.operations.git.configure
-          inputs:
-            commit_msg_resource_path:
-              default: resources/commit-msg
-            git_config:
-              default: { get_property: [SELF, git_config] }
+        create: self.operations.git.clone
+        configure: self.operations.git.configure
       git:
         pull: self.operations.git.pull
-        status:
-          implementation: self.operations.git.status
-          inputs:
-            git_prompt_paths:
-              default: { get_property: [SELF, git_prompt_paths] }
+        status: self.operations.git.status
         checkout:
           implementation: self.operations.git.checkout
           inputs:
-            repo_type:
-              default: { get_property: [SELF, repo_type ] }
             branch:
-              default: ''
               description: |
                 Which branch to checkout out, if starts with a dot (.), it will be
                 treated as a core/plugin checkout and a version prefix will be attached
@@ -313,21 +288,15 @@ node_types:
         diff:
           implementation: self.operations.git.diff
           inputs:
-            repo_type:
-              default: { get_property: [SELF, repo_type] }
             revision_range:
               default: ''
         rebase:
           implementation: self.operations.git.rebase
           inputs:
-            repo_type:
-              default: { get_property: [SELF, repo_type ] }
             base: {}
         squash:
           implementation: self.operations.git.squash
           inputs:
-            repo_type:
-              default: { get_property: [SELF, repo_type ] }
             base: {}
         reset:
           implementation: self.operations.git.reset

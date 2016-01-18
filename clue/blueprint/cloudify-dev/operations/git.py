@@ -16,6 +16,7 @@
 
 import os
 import sys
+import functools
 
 import sh
 import yaml
@@ -28,249 +29,316 @@ from cloudify.decorators import operation
 from common import bake
 
 
-def _git(log_out=True):
-    repo_location = ctx.instance.runtime_properties['repo_location']
-    git = sh.git
-    if log_out:
-        git = bake(git)
-    return git.bake(
-        '--no-pager',
-        '--git-dir', path(repo_location) / '.git',
-        '--work-tree', repo_location)
+def repo_operation(fn):
+    @operation
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        repo = GitRepo()
+        return fn(repo, *args, **kwargs)
 
 
-def _current_branch():
-    git = _git(log_out=False)
-    return git('rev-parse', '--abbrev-ref', 'HEAD').stdout.strip()
+@repo_operation
+def clone(repo, **_):
+    repo.clone()
 
 
-@operation
-def clone(location, organization, repo, branch, clone_method, **_):
-    git = bake(sh.git)
-
-    location = os.path.expanduser(location)
-    repo_location = os.path.join(location, repo)
-    ctx.instance.runtime_properties['repo_location'] = repo_location
-    ctx.instance.runtime_properties['git_version'] = sh.git(
-        version=True).stdout.strip()
-    if os.path.isdir(repo_location):
-        return
-    if clone_method == 'https':
-        clone_url = 'https://github.com/{}/{}.git'.format(organization, repo)
-    elif clone_method == 'ssh':
-        clone_url = 'git@github.com:{}/{}.git'.format(organization, repo)
-    else:
-        raise exceptions.NonRecoverableError('Illegal clone method: {0}'
-                                             .format(clone_method))
-    git.clone(clone_url,
-              repo_location,
-              '-b', branch).wait()
+@repo_operation
+def configure(repo, **_):
+    repo.configure()
 
 
-@operation
-def configure(commit_msg_resource_path, git_config, **_):
-    repo_location = path(ctx.instance.runtime_properties['repo_location'])
-
-    # configure commit-msg hook
-    commit_msg_hook_path = repo_location / '.git' / 'hooks' / 'commit-msg'
-    ctx.download_resource_and_render(
-        commit_msg_resource_path,
-        template_variables={'sys_executable': sys.executable},
-        target_path=commit_msg_hook_path)
-    os.chmod(commit_msg_hook_path, 0755)
-
-    # git config
-    git = _git()
-    for key, value in git_config.items():
-        git.config(key, value).wait()
+@repo_operation
+def pull(repo, **_):
+    repo.pull()
 
 
-@operation
-def pull(**_):
-    git = _git()
-    kwargs = {
-        'prune': True
-    }
-    git_version = ctx.instance.runtime_properties['git_version']
-    if git_version >= 'git version 2.0.0':
-        kwargs['tags'] = True
-    git.pull(**kwargs).wait()
+@repo_operation
+def status(repo, **_):
+    repo.status()
 
 
-@operation
-def status(git_prompt_paths, **_):
-    git = _git()
+@repo_operation
+def checkout(repo, branch, **_):
+    repo.checkout(branch)
 
-    for git_prompt_path in git_prompt_paths:
-        if os.path.exists(os.path.expanduser(git_prompt_path)):
-            break
-    else:
-        git_prompt_path = None
 
-    if git_prompt_path:
+@repo_operation
+def squash(repo, base, **_):
+    repo.squash(base)
+
+
+@repo_operation
+def reset(repo, hard, origin, **_):
+    repo.reset(hard, origin)
+
+
+@repo_operation
+def rebase(repo, base, **_):
+    repo.rebase(base)
+
+
+@repo_operation
+def diff(repo, revision_range, **_):
+    repo.diff(revision_range)
+
+
+class GitRepo(object):
+
+    def clone(self):
+        git = bake(sh.git)
+        ctx.instance.runtime_properties['repo_location'] = self.repo_location
+        ctx.instance.runtime_properties['git_version'] = sh.git(
+                version=True).stdout.strip()
+        if os.path.isdir(self.repo_location):
+            return
+        if self.clone_method == 'https':
+            clone_url = 'https://github.com/{}/{}.git'.format(
+                self.organization, self.name)
+        elif self.clone_method == 'ssh':
+            clone_url = 'git@github.com:{}/{}.git'.format(
+                self.organization, self.name)
+        else:
+            raise exceptions.NonRecoverableError(
+                'Illegal clone method: {0}'.format(self.clone_method))
+        git.clone(clone_url, self.repo_location, '-b', self.branch).wait()
+
+    def configure(self):
+        # configure commit-msg hook
+        hook_path = path(self.repo_location) / '.git' / 'hooks' / 'commit-msg'
+        ctx.download_resource_and_render(
+                'resources/commit-msg',
+                template_variables={'sys_executable': sys.executable},
+                target_path=hook_path)
+        os.chmod(hook_path, 0755)
+        # git config
+        for key, value in self.git_config.items():
+            self.git.config(key, value).wait()
+
+    def pull(self):
+        kwargs = {
+            'prune': True
+        }
+        git_version = ctx.instance.runtime_properties['git_version']
+        if git_version >= 'git version 2.0.0':
+            kwargs['tags'] = True
+        self.git.pull(**kwargs).wait()
+
+    def status(self):
+        for git_prompt_path in self.git_prompt_paths:
+            if os.path.exists(os.path.expanduser(git_prompt_path)):
+                break
+        else:
+            git_prompt_path = None
+        if git_prompt_path:
+            script_path = ctx.download_resource_and_render(
+                    'resources/git-branch-state.sh', template_variables={
+                        'git_prompt_path': git_prompt_path,
+                        'repo_location': self.repo_location})
+            try:
+                os.chmod(script_path, 0o0755)
+                script = sh.Command(script_path)
+                branch_state = script().stdout.strip()
+            finally:
+                os.remove(script_path)
+        else:
+            branch_state = self.current_branch
+        ctx.logger.info(branch_state)
+        self.git.status(s=True).wait()
+
+    def checkout(self, branch):
+        default_branch = self.branch
+        current_branch_set = None
+        branches = {}
+        if self.branches_file.exists():
+            branches = yaml.safe_load(self.branches_file.text()) or {}
+        if branch in branches:
+            branches_set = branches[branch]
+            if all(k in branches_set for k in ['branch', 'repos']):
+                if self.name in branches_set['repos']:
+                    current_branch_set = branch
+                    branch = branches_set['branch']
+                else:
+                    branch = default_branch
+            else:
+                if self.name in branches_set:
+                    current_branch_set = branch
+                    branch = branches_set[self.name]
+                else:
+                    branch = default_branch
+        elif branch == 'default':
+            branch = default_branch
+        elif self.type == 'misc':
+            return
+        elif self.type not in ['core', 'plugin']:
+            raise exceptions.NonRecoverableError('Unhandled repo type: {}'
+                                                 .format(self.type))
+        elif not branch:
+            raise exceptions.NonRecoverableError('Branch is not defined')
+        elif branch.startswith('.'):
+            branch = self._fix_branch_name(branch)
+        try:
+            self.git.checkout(branch).wait()
+            if current_branch_set:
+                ctx.instance.runtime_properties[
+                    'current_branch_set'] = current_branch_set
+                ctx.instance.runtime_properties[
+                    'current_branch_set_branch'] = branch
+            else:
+                ctx.instance.runtime_properties.pop('current_branch_set', None)
+                ctx.instance.runtime_properties.pop(
+                    'current_branch_set_branch', None)
+        except sh.ErrorReturnCode:
+            ctx.logger.error('Could not checkout branch {0}'.format(branch))
+
+    def reset(self, hard, origin):
+        if not self._validate_branch_set():
+            return
+        self.git.reset.bake(hard=hard)(
+            '{0}/{1}'.format(origin, self.current_branch)).wait()
+
+    def rebase(self, base):
+        if not self._validate_branch_set():
+            return
+        try:
+            base = self._fix_branch_name(base)
+            self.git.rebase(base).wait()
+        except Exception as e:
+            ctx.logger.error('Failed rebase, aborting: {0}'.format(e))
+            try:
+                self.git.rebase(abort=True).wait()
+            except:
+                pass
+
+    def squash(self, base):
+        if not self._validate_branch_set():
+            return
+        git_version = ctx.instance.runtime_properties['git_version']
+        if git_version < 'git version 1.9':
+            ctx.logger.warn('git version >= 1.9 is required for squash.')
+            return
+        git = self.git_output
+        base = self._fix_branch_name(base)
+        merge_base = git.bake('merge-base', fork_point=True)(
+                base).stdout.strip()
+        commits = git.bake(
+                'rev-list',
+                ancestry_path=True,
+        )('{0}..HEAD'.format(merge_base)).stdout.strip().split('\n')
+        commits = [c.strip() for c in commits]
+        if len(commits) == 1:
+            ctx.logger.info('Single commit found. Skipping squash.')
+            return
+        commit_message_sha = commits[-1]
+        commit_message = git.log(commit_message_sha,
+                                 format='%B', n=1).stdout.strip()
+        git = self.git
+        ctx.logger.info(
+            'Squashing with merge_base: {0} and commit message: {1}'
+            .format(merge_base, commit_message))
+        git.reset(merge_base, soft=True).wait()
+        git.commit(message=commit_message).wait()
+
+    def diff(self, revision_range):
+        if self.type not in ['core', 'plugin']:
+            return
+        split_range = revision_range.split('..')
+        if len(split_range) != 2:
+            ctx.logger.error(
+                'Invalid range supplied: {0}'.format(revision_range))
+            return
+        left = self._fix_branch_name(split_range[0])
+        right = self._fix_branch_name(split_range[1])
+        diff_range = '{0}..{1}'.format(left, right)
+        try:
+            self.git.diff(diff_range).wait()
+        except sh.ErrorReturnCode:
+            ctx.logger.error('{0} diff failed'.format(diff_range))
+
+    @property
+    def location(self):
+        return os.path.expanduser(ctx.properties['location'])
+
+    @property
+    def name(self):
+        return ctx.properties['name']
+
+    @property
+    def repo_location(self):
+        return os.path.join(self.location, self.name)
+
+    @property
+    def organization(self):
+        return ctx.properties['organization']
+
+    @property
+    def branch(self):
+        return ctx.properties['branch']
+
+    @property
+    def clone_method(self):
+        return ctx.properties['clone_method']
+
+    @property
+    def type(self):
+        return ctx.properties['repo_type']
+
+    @property
+    def git_config(self):
+        return ctx.properties['git_config']
+
+    @property
+    def git_prompt_paths(self):
+        return ctx.properties['git_prompt_paths']
+
+    @property
+    def branches_file(self):
+        return path(ctx.properties['branches_file'])
+
+    @property
+    def current_branch(self):
+        return self.git_output('rev-parse', '--abbrev-ref',
+                               'HEAD').stdout.strip()
+
+    @property
+    def git(self):
+        return self._git(log_out=True)
+
+    @property
+    def git_output(self):
+        return self._git(log_out=False)
+
+    @staticmethod
+    def _git(log_out):
         repo_location = ctx.instance.runtime_properties['repo_location']
-        script_path = ctx.download_resource_and_render(
-            'resources/git-branch-state.sh', template_variables={
-                'git_prompt_path': git_prompt_path,
-                'repo_location': repo_location})
-        try:
-            os.chmod(script_path, 0o0755)
-            script = sh.Command(script_path)
-            branch_state = script().stdout.strip()
-        finally:
-            os.remove(script_path)
-    else:
-        branch_state = _current_branch()
-    ctx.logger.info(branch_state)
-    git.status(s=True).wait()
+        git = sh.git
+        if log_out:
+            git = bake(git)
+        return git.bake(
+                '--no-pager',
+                '--git-dir', path(repo_location) / '.git',
+                '--work-tree', repo_location)
 
+    def _validate_branch_set(self):
+        current_branch_set = ctx.instance.runtime_properties.get(
+                'current_branch_set')
+        current_branch_set_branch = ctx.instance.runtime_properties.get(
+                'current_branch_set_branch')
+        if not (current_branch_set and current_branch_set_branch):
+            return False
+        current_branch = self.current_branch
+        if current_branch_set_branch != current_branch:
+            ctx.logger.warn(
+                    'Current branch: "{0}" does not match current branch set: '
+                    '"{1}" branch "{2}"'.format(current_branch,
+                                                current_branch_set,
+                                                current_branch_set_branch))
+            return False
+        return True
 
-@operation
-def checkout(repo_type, branch, **_):
-    git = _git()
-    default_branch = ctx.node.properties['branch']
-    branches_file = os.path.expanduser(ctx.node.properties['branches_file'])
-    branches = {}
-    current_branch_set = None
-    if os.path.exists(branches_file):
-        with open(branches_file) as f:
-            branches = yaml.safe_load(f) or {}
-    if branch in branches:
-        branches_set = branches[branch]
-        name = ctx.node.properties['name']
-        if all(k in branches_set for k in ['branch', 'repos']):
-            if name in branches_set['repos']:
-                current_branch_set = branch
-                branch = branches_set['branch']
-            else:
-                branch = default_branch
-        else:
-            if name in branches_set:
-                current_branch_set = branch
-                branch = branches_set[name]
-            else:
-                branch = default_branch
-    elif branch == 'default':
-        branch = default_branch
-    elif repo_type == 'misc':
-        return
-    elif repo_type not in ['core', 'plugin']:
-        raise exceptions.NonRecoverableError('Unhandled repo type: {}'
-                                             .format(repo_type))
-    elif not branch:
-        raise exceptions.NonRecoverableError('Branch is not defined')
-    elif branch.startswith('.'):
-        branch = _fix_branch_name(repo_type, branch)
-    try:
-        git.checkout(branch).wait()
-        if current_branch_set:
-            ctx.instance.runtime_properties[
-                'current_branch_set'] = current_branch_set
-            ctx.instance.runtime_properties[
-                'current_branch_set_branch'] = branch
-        else:
-            ctx.instance.runtime_properties.pop('current_branch_set', None)
-            ctx.instance.runtime_properties.pop('current_branch_set_branch',
-                                                None)
-    except sh.ErrorReturnCode:
-        ctx.logger.error('Could not checkout branch {0}'.format(branch))
-
-
-@operation
-def squash(base, repo_type, **_):
-    if not _validate_branch_set():
-        return
-    git_version = ctx.instance.runtime_properties['git_version']
-    if git_version < 'git version 1.9':
-        ctx.logger.warn('git version >= 1.9 is required for squash.')
-        return
-    git = _git(log_out=False)
-    base = _fix_branch_name(repo_type, base)
-    merge_base = git.bake('merge-base', fork_point=True)(
-        base).stdout.strip()
-    commits = git.bake(
-        'rev-list',
-        ancestry_path=True,
-    )('{0}..HEAD'.format(merge_base)).stdout.strip().split('\n')
-    commits = [c.strip() for c in commits]
-    if len(commits) == 1:
-        ctx.logger.info('Single commit found. Skipping squash.')
-        return
-    commit_message_sha = commits[-1]
-    commit_message = git.log(commit_message_sha,
-                             format='%B', n=1).stdout.strip()
-    git = _git(log_out=True)
-    ctx.logger.info('Squashing with merge_base: {0} and commit message: {1}'
-                    .format(merge_base, commit_message))
-    git.reset(merge_base, soft=True).wait()
-    git.commit(message=commit_message).wait()
-
-
-@operation
-def reset(hard, origin, **_):
-    if not _validate_branch_set():
-        return
-    git = _git()
-    current_branch = _current_branch()
-    git.reset.bake(hard=hard)('{0}/{1}'.format(origin, current_branch)).wait()
-
-
-@operation
-def rebase(base, repo_type, **_):
-    if not _validate_branch_set():
-        return
-    git = _git()
-    try:
-        base = _fix_branch_name(repo_type, base)
-        git.rebase(base).wait()
-    except Exception as e:
-        ctx.logger.error('Failed rebase, aborting: {0}'.format(e))
-        try:
-            git.rebase(abort=True).wait()
-        except:
-            pass
-
-
-def _validate_branch_set():
-    current_branch_set = ctx.instance.runtime_properties.get(
-            'current_branch_set')
-    current_branch_set_branch = ctx.instance.runtime_properties.get(
-            'current_branch_set_branch')
-    if not (current_branch_set and current_branch_set_branch):
-        return False
-    current_branch = _current_branch()
-    if current_branch_set_branch != current_branch:
-        ctx.logger.warn(
-            'Current branch: "{0}" does not match current branch set: "{1}" '
-            'branch "{2}"'.format(current_branch,
-                                  current_branch_set,
-                                  current_branch_set_branch))
-        return False
-    return True
-
-
-@operation
-def diff(repo_type, revision_range, **_):
-    if repo_type not in ['core', 'plugin']:
-        return
-    split_range = revision_range.split('..')
-    if len(split_range) != 2:
-        ctx.logger.error('Invalid range supplied: {0}'.format(revision_range))
-        return
-    left = _fix_branch_name(repo_type, split_range[0])
-    right = _fix_branch_name(repo_type, split_range[1])
-    diff_range = '{0}..{1}'.format(left, right)
-    try:
-        git = _git()
-        git.diff(diff_range).wait()
-    except sh.ErrorReturnCode:
-        ctx.logger.error('{0} diff failed'.format(diff_range))
-
-
-def _fix_branch_name(repo_type, branch):
-    if not branch.startswith('.'):
-        return branch
-    if repo_type not in ['core', 'plugin']:
-        return branch
-    template = '3{}' if repo_type == 'core' else '1{}'
-    return template.format(branch)
+    def _fix_branch_name(self, branch):
+        if not branch.startswith('.'):
+            return branch
+        if self.type not in ['core', 'plugin']:
+            return branch
+        template = '3{}' if self.type == 'core' else '1{}'
+        return template.format(branch)
