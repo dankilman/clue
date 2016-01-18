@@ -35,6 +35,7 @@ def repo_operation(fn):
     def wrapper(*args, **kwargs):
         repo = GitRepo()
         return fn(repo, *args, **kwargs)
+    return wrapper
 
 
 @repo_operation
