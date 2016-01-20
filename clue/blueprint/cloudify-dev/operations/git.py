@@ -64,8 +64,8 @@ def checkout(repo, branch, **_):
 
 
 @repo_operation
-def squash(repo, base, **_):
-    repo.squash(base)
+def squash(repo, **_):
+    repo.squash()
 
 
 @repo_operation
@@ -74,8 +74,8 @@ def reset(repo, hard, origin, **_):
 
 
 @repo_operation
-def rebase(repo, base, **_):
-    repo.rebase(base)
+def rebase(repo, **_):
+    repo.rebase()
 
 
 @repo_operation
@@ -186,9 +186,10 @@ class GitRepo(object):
         self.git.reset.bake(hard=hard)(
             '{0}/{1}'.format(origin, self.current_branch)).wait()
 
-    def rebase(self, base):
+    def rebase(self):
         if not self._validate_branch_set():
             return
+        base = self.active_branch_set.base
         try:
             base = self._fix_branch_name(base)
             self.git.rebase(base).wait()
@@ -199,13 +200,14 @@ class GitRepo(object):
             except:
                 pass
 
-    def squash(self, base):
+    def squash(self):
         if not self._validate_branch_set():
             return
         if self.git_version < 'git version 1.9':
             ctx.logger.warn('git version >= 1.9 is required for squash.')
             return
         git = self.git_output
+        base = self.active_branch_set.base
         base = self._fix_branch_name(base)
         merge_base = git.bake('merge-base', fork_point=True)(
                 base).stdout.strip()
@@ -334,9 +336,7 @@ class GitRepo(object):
         if self.active_branch_set.branch != current_branch:
             ctx.logger.warn(
                 'Current branch: "{0}" does not match current branch set: '
-                '"{1}" branch "{2}"'.format(current_branch,
-                                            self.active_branch_set,
-                                            self.active_branch_set.branch))
+                '{1}'.format(current_branch, self.active_branch_set))
             return False
         return True
 
@@ -366,9 +366,19 @@ class BranchSet(dict):
             return None
         elif isinstance(repos, dict):
             return repos.get(self.repo.name)
+        elif isinstance(repos, list):
+            if self.repo.name in repos:
+                return self.get('branch')
+            else:
+                return None
         else:
-            return self.get('branch')
+            raise exceptions.NonRecoverableError('Invalid repos: {}'
+                                                 .format(repos))
 
     @property
     def name(self):
         return self.get('name')
+
+    @property
+    def base(self):
+        return self.get('base', 'master')

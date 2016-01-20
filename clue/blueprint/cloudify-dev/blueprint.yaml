@@ -293,14 +293,8 @@ node_types:
           inputs:
             revision_range:
               default: ''
-        rebase:
-          implementation: self.operations.git.rebase
-          inputs:
-            base: {}
-        squash:
-          implementation: self.operations.git.squash
-          inputs:
-            base: {}
+        rebase: self.operations.git.rebase
+        squash: self.operations.git.squash
         reset:
           implementation: self.operations.git.reset
           inputs:

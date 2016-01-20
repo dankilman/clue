@@ -189,7 +189,11 @@ class TestGit(tests.BaseTest):
         assert_master()
 
     def test_rebase(self):
-        core_repo_dir, _, _ = self._install_repo_types_with_branches()
+        branch = '3.2.1-build'
+        base = branch
+        core_repo_dir, _, _ = self._install_repo_types_with_branches(
+            branch=branch,
+            base=base)
 
         # rebase with no "active" branch set should not do anything
         output = self.clue.git.rebase().stdout.strip()
@@ -197,14 +201,14 @@ class TestGit(tests.BaseTest):
 
         # only "active" branch set repos should be affected
         self.clue.git.checkout('test')
-        output = self.clue.git.rebase(b='3.2.1-build').stdout.strip()
+        output = self.clue.git.rebase().stdout.strip()
         self.assertEqual(len(output.split('\n')), 1)
         self.assertIn('cloudify-rest-client', output)
         self.assertIn('Current branch 3.2.1-build is up to date.', output)
 
         # test repo type consideration (.2.1-build for core type should
         # transform to 3.2.1-build)
-        output = self.clue.git.rebase(b='.2.1-build').stdout.strip()
+        output = self.clue.git.rebase().stdout.strip()
         self.assertEqual(len(output.split('\n')), 1)
         self.assertIn('cloudify-rest-client', output)
         self.assertIn('Current branch 3.2.1-build is up to date.', output)
@@ -213,7 +217,7 @@ class TestGit(tests.BaseTest):
         # should result in a warning, and no state change
         with core_repo_dir:
             git.checkout('3.3')
-        output = self.clue.git.rebase(b='3.2.1-build').stdout.strip()
+        output = self.clue.git.rebase().stdout.strip()
         self.assertEqual(len(output.split('\n')), 1)
         self.assertIn('cloudify-rest-client', output)
         self.assertIn('does not match current branch set', output)
@@ -221,14 +225,23 @@ class TestGit(tests.BaseTest):
         # 'clue git checkout' of anything that is not a repo set, should
         # remove "active" branch set state
         self.clue.git.checkout('default')
-        output = self.clue.git.rebase(b='3.2.1-build').stdout.strip()
+        output = self.clue.git.rebase().stdout.strip()
         self.assertEqual(len(output), 0)
 
         # Unclean re-bases should be aborted
+        self._update_branches_yaml(branch=branch, base='master')
         self.clue.git.checkout('test')
         output = self.clue.git.rebase().stdout.strip()
         self.assertIn('Failed rebase, aborting', output)
         self.assertFalse((core_repo_dir / '.git' / 'rebase-apply').isdir())
+
+        # Test default master base
+        self._update_branches_yaml(branch='master')
+        self.clue.git.checkout('test')
+        output = self.clue.git.rebase().stdout.strip()
+        self.assertEqual(len(output.split('\n')), 1)
+        self.assertIn('cloudify-rest-client', output)
+        self.assertIn('Current branch master is up to date.', output)
 
     def test_squash(self):
         branch = 'test_branch'
@@ -269,8 +282,10 @@ class TestGit(tests.BaseTest):
 
         # test .3.1-build => 3.3.1-build transformation by examining
         # error message of illegal squash
+        self._update_branches_yaml(branch=branch, base='.3.1-build')
+        self.clue.git.checkout('test')
         with self.assertRaises(sh.ErrorReturnCode) as c:
-            self.clue.git.squash(b='.3.1-build')
+            self.clue.git.squash()
         self.assertIn('3.3.1-build', c.exception.stdout)
 
     def test_reset(self):
@@ -326,22 +341,28 @@ class TestGit(tests.BaseTest):
                           clone_method=clone_method)
         return repo_dir
 
-    def _install_repo_types_with_branches(self, branch='3.2.1-build'):
+    def _install_repo_types_with_branches(self, branch='3.2.1-build',
+                                          base=None):
         git_config = {
             'user.name': 'John Doe',
             'user.email': 'john.doe@example.com'
         }
         core, plugin, misc = self._install_repo_types(git_config=git_config)
+        self._update_branches_yaml(branch, base)
+        return core, plugin, misc
+
+    def _update_branches_yaml(self, branch, base=None):
         test_branches = {
             'repos': {
                 'cloudify-rest-client': branch
             }
         }
+        if base:
+            test_branches['base'] = base
         branches_file = self.workdir / 'branches.yaml'
         branches_file.write_text(yaml.safe_dump({
             'test': test_branches,
         }))
-        return core, plugin, misc
 
     def _install_repo_types(self, git_config=None):
         core_repo = 'cloudify-rest-client'
