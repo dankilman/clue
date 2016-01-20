@@ -87,9 +87,10 @@ class GitRepo(object):
 
     def clone(self):
         git = bake(sh.git)
-        ctx.instance.runtime_properties['repo_location'] = self.repo_location
+        ctx.instance.runtime_properties['repo_location'] = str(
+            self.repo_location)
         self.git_version = sh.git(version=True).stdout.strip()
-        if os.path.isdir(self.repo_location):
+        if self.repo_location.isdir():
             return
         if self.clone_method == 'https':
             clone_url = 'https://github.com/{}/{}.git'.format(
@@ -104,11 +105,11 @@ class GitRepo(object):
 
     def configure(self):
         # configure commit-msg hook
-        hook_path = path(self.repo_location) / '.git' / 'hooks' / 'commit-msg'
+        hook_path = self.repo_location / '.git' / 'hooks' / 'commit-msg'
         ctx.download_resource_and_render(
-                'resources/commit-msg',
-                template_variables={'sys_executable': sys.executable},
-                target_path=hook_path)
+            'resources/commit-msg',
+            template_variables={'sys_executable': sys.executable},
+            target_path=hook_path)
         os.chmod(hook_path, 0755)
         # git config
         for key, value in self.git_config.items():
@@ -124,15 +125,15 @@ class GitRepo(object):
 
     def status(self):
         for git_prompt_path in self.git_prompt_paths:
-            if os.path.exists(os.path.expanduser(git_prompt_path)):
+            if git_prompt_path.expanduser().exists():
                 break
         else:
             git_prompt_path = None
         if git_prompt_path:
             script_path = ctx.download_resource_and_render(
-                    'resources/git-branch-state.sh', template_variables={
-                        'git_prompt_path': git_prompt_path,
-                        'repo_location': self.repo_location})
+                'resources/git-branch-state.sh', template_variables={
+                    'git_prompt_path': git_prompt_path,
+                    'repo_location': self.repo_location})
             try:
                 os.chmod(script_path, 0o0755)
                 script = sh.Command(script_path)
@@ -216,8 +217,8 @@ class GitRepo(object):
         merge_base = git.bake('merge-base', fork_point=True)(
                 base).stdout.strip()
         commits = git.bake(
-                'rev-list',
-                ancestry_path=True,
+            'rev-list',
+            ancestry_path=True,
         )('{0}..HEAD'.format(merge_base)).stdout.strip().split('\n')
         commits = [c.strip() for c in commits]
         if len(commits) == 1:
@@ -251,7 +252,7 @@ class GitRepo(object):
 
     @property
     def location(self):
-        return os.path.expanduser(ctx.node.properties['location'])
+        return path(os.path.expanduser(ctx.node.properties['location']))
 
     @property
     def name(self):
@@ -259,7 +260,7 @@ class GitRepo(object):
 
     @property
     def repo_location(self):
-        return os.path.join(self.location, self.name)
+        return self.location / self.name
 
     @property
     def organization(self):
@@ -283,7 +284,7 @@ class GitRepo(object):
 
     @property
     def git_prompt_paths(self):
-        return ctx.node.properties['git_prompt_paths']
+        return [path(p) for p in ctx.node.properties['git_prompt_paths']]
 
     @property
     def branches_file(self):
@@ -339,9 +340,9 @@ class GitRepo(object):
         if log_out:
             git = bake(git)
         return git.bake(
-                '--no-pager',
-                '--git-dir', path(self.repo_location) / '.git',
-                '--work-tree', self.repo_location)
+            '--no-pager',
+            '--git-dir', self.repo_location / '.git',
+            '--work-tree', self.repo_location)
 
     def _validate_branch_set(self):
         if not (self.active_branch_set and self.active_branch_set_branch):
@@ -349,10 +350,10 @@ class GitRepo(object):
         current_branch = self.current_branch
         if self.active_branch_set_branch != current_branch:
             ctx.logger.warn(
-                    'Current branch: "{0}" does not match current branch set: '
-                    '"{1}" branch "{2}"'.format(current_branch,
-                                                self.active_branch_set,
-                                                self.active_branch_set_branch))
+                'Current branch: "{0}" does not match current branch set: '
+                '"{1}" branch "{2}"'.format(current_branch,
+                                            self.active_branch_set,
+                                            self.active_branch_set_branch))
             return False
         return True
 
