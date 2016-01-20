@@ -124,7 +124,9 @@ class TestGit(tests.BaseTest):
          plugin_repo_dir,
          misc_repo_dir) = self._install_repo_types()
         test_branches = {
-            'cloudify-rest-client': '3.3.1-build'
+            'repos': {
+                'cloudify-rest-client': '3.3.1-build'
+            }
         }
         test_branches2 = {
             'branch': '3.3.1-build',
@@ -321,7 +323,9 @@ class TestGit(tests.BaseTest):
         }
         core, plugin, misc = self._install_repo_types(git_config=git_config)
         test_branches = {
-            'cloudify-rest-client': branch
+            'repos': {
+                'cloudify-rest-client': branch
+            }
         }
         branches_file = self.workdir / 'branches.yaml'
         branches_file.write_text(yaml.safe_dump({

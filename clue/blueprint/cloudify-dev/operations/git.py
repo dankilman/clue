@@ -152,19 +152,12 @@ class GitRepo(object):
         if self.branches_file.exists():
             branches = yaml.safe_load(self.branches_file.text()) or {}
         if branch in branches:
-            branches_set = branches[branch]
-            if all(k in branches_set for k in ['branch', 'repos']):
-                if self.name in branches_set['repos']:
-                    active_branch_set = branch
-                    branch = branches_set['branch']
-                else:
-                    branch = default_branch
-            else:
-                if self.name in branches_set:
-                    active_branch_set = branch
-                    branch = branches_set[self.name]
-                else:
-                    branch = default_branch
+            active_branch_set = BranchSet(self, branches[branch])
+            active_branch_set['name'] = branch
+            branch = active_branch_set.branch
+            if not branch:
+                branch = default_branch
+                active_branch_set = None
         elif branch == 'default':
             branch = default_branch
         elif self.type == 'misc':
@@ -180,10 +173,8 @@ class GitRepo(object):
             self.git.checkout(branch).wait()
             if active_branch_set:
                 self.active_branch_set = active_branch_set
-                self.active_branch_set_branch = branch
             else:
                 del self.active_branch_set
-                del self.active_branch_set_branch
         except sh.ErrorReturnCode:
             ctx.logger.error('Could not checkout branch {0}'.format(branch))
 
@@ -292,27 +283,17 @@ class GitRepo(object):
 
     @property
     def active_branch_set(self):
-        return ctx.instance.runtime_properties.get('current_branch_set')
+        return BranchSet(
+            self,
+            ctx.instance.runtime_properties.get('current_branch_set', {}))
 
     @active_branch_set.setter
     def active_branch_set(self, value):
-        ctx.instance.runtime_properties['current_branch_set'] = value
+        ctx.instance.runtime_properties['active_branch_set'] = dict(value)
 
     @active_branch_set.deleter
     def active_branch_set(self):
-        ctx.instance.runtime_properties.pop('current_branch_set', None)
-
-    @property
-    def active_branch_set_branch(self):
-        return ctx.instance.runtime_properties.get('current_branch_set_branch')
-
-    @active_branch_set_branch.setter
-    def active_branch_set_branch(self, value):
-        ctx.instance.runtime_properties['current_branch_set_branch'] = value
-
-    @active_branch_set_branch.deleter
-    def active_branch_set_branch(self):
-        ctx.instance.runtime_properties.pop('current_branch_set_branch', None)
+        ctx.instance.runtime_properties.pop('active_branch_set', None)
 
     @property
     def git_version(self):
@@ -345,15 +326,15 @@ class GitRepo(object):
             '--work-tree', self.repo_location)
 
     def _validate_branch_set(self):
-        if not (self.active_branch_set and self.active_branch_set_branch):
+        if not self.active_branch_set:
             return False
         current_branch = self.current_branch
-        if self.active_branch_set_branch != current_branch:
+        if self.active_branch_set.branch != current_branch:
             ctx.logger.warn(
                 'Current branch: "{0}" does not match current branch set: '
                 '"{1}" branch "{2}"'.format(current_branch,
                                             self.active_branch_set,
-                                            self.active_branch_set_branch))
+                                            self.active_branch_set.branch))
             return False
         return True
 
@@ -364,3 +345,28 @@ class GitRepo(object):
             return branch
         template = '3{}' if self.type == 'core' else '1{}'
         return template.format(branch)
+
+
+class BranchSet(dict):
+
+    def __init__(self, repo, initial):
+        self.repo = repo
+        self.update(initial)
+
+    @property
+    def repos(self):
+        return self.get('repos')
+
+    @property
+    def branch(self):
+        repos = self.repos
+        if not repos:
+            return None
+        elif isinstance(repos, dict):
+            return repos.get(self.repo.name)
+        else:
+            return self.get('branch')
+
+    @property
+    def name(self):
+        return self.get('name')
