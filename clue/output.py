@@ -22,7 +22,16 @@ from clash.output import Event
 class NamedNodeEvent(object):
 
     @staticmethod
-    def factory(env, verbose):
+    def factory(env, verbose, command):
+        max_len = 0
+        git_command = command.get('parameters', {}).get(
+            'operation').startswith('git.')
+        node_type = 'git_repo' if git_command else 'python_package'
+        for node in env.storage.get_nodes():
+            if node.type == node_type:
+                max_len = max(max_len, len(node.properties['name']))
+        formatting = '{0:<' + str(max_len + 1) + '}'
+
         class NamedNodeEventImpl(Event):
             def __str__(self):
                 if (not verbose and self.level and
@@ -30,7 +39,7 @@ class NamedNodeEvent(object):
                         self.node_name):
                     node = env.storage.get_node(self.node_name)
                     name = node.properties['name']
-                    name = colors.green('{0:<30}'.format(name))
+                    name = colors.green(formatting.format(name))
                     return ' {0}| {1}'.format(name, self.message)
                 else:
                     return super(NamedNodeEventImpl, self).__str__()
@@ -40,7 +49,7 @@ class NamedNodeEvent(object):
 class NoseEvent(object):
 
     @staticmethod
-    def factory(env, verbose):
+    def factory(env, verbose, command):
         class NoseEventImpl(Event):
             def __str__(self):
                 if not verbose:
