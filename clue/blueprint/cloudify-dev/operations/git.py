@@ -87,8 +87,7 @@ class GitRepo(object):
 
     def clone(self):
         git = bake(sh.git)
-        ctx.instance.runtime_properties['repo_location'] = str(
-            self.repo_location)
+        self.runtime_properties['repo_location'] = str(self.repo_location)
         self.git_version = sh.git(version=True).stdout.strip()
         if self.repo_location.isdir():
             return
@@ -110,15 +109,13 @@ class GitRepo(object):
             'resources/commit-msg',
             template_variables={'sys_executable': sys.executable},
             target_path=hook_path)
-        os.chmod(hook_path, 0755)
+        os.chmod(hook_path, 0o755)
         # git config
         for key, value in self.git_config.items():
             self.git.config(key, value).wait()
 
     def pull(self):
-        kwargs = {
-            'prune': True
-        }
+        kwargs = {'prune': True}
         if self.git_version >= 'git version 2.0.0':
             kwargs['tags'] = True
         self.git.pull(**kwargs).wait()
@@ -137,7 +134,7 @@ class GitRepo(object):
                     'git_prompt_path': git_prompt_path,
                     'repo_location': self.repo_location})
             try:
-                os.chmod(script_path, 0o0755)
+                os.chmod(script_path, 0o755)
                 script = sh.Command(script_path)
                 branch_state = script().stdout.strip()
             finally:
@@ -247,11 +244,11 @@ class GitRepo(object):
 
     @property
     def location(self):
-        return path(os.path.expanduser(ctx.node.properties['location']))
+        return path(self.properties['location']).expanduser()
 
     @property
     def name(self):
-        return ctx.node.properties['name']
+        return self.properties['name']
 
     @property
     def repo_location(self):
@@ -259,53 +256,52 @@ class GitRepo(object):
 
     @property
     def organization(self):
-        return ctx.node.properties['organization']
+        return self.properties['organization']
 
     @property
     def branch(self):
-        return ctx.node.properties['branch']
+        return self.properties['branch']
 
     @property
     def clone_method(self):
-        return ctx.node.properties['clone_method']
+        return self.properties['clone_method']
 
     @property
     def type(self):
-        return ctx.node.properties['repo_type']
+        return self.properties['repo_type']
 
     @property
     def git_config(self):
-        return ctx.node.properties['git_config']
+        return self.properties['git_config']
 
     @property
     def git_prompt_paths(self):
-        return [path(p) for p in ctx.node.properties['git_prompt_paths']]
+        return [path(p) for p in self.properties['git_prompt_paths']]
 
     @property
     def branches_file(self):
-        return path(ctx.node.properties['branches_file'])
+        return path(self.properties['branches_file'])
 
     @property
     def active_branch_set(self):
         return BranchSet(
-            self,
-            ctx.instance.runtime_properties.get('active_branch_set', {}))
+            self, self.runtime_properties.get('active_branch_set', {}))
 
     @active_branch_set.setter
     def active_branch_set(self, value):
-        ctx.instance.runtime_properties['active_branch_set'] = dict(value)
+        self.runtime_properties['active_branch_set'] = dict(value)
 
     @active_branch_set.deleter
     def active_branch_set(self):
-        ctx.instance.runtime_properties.pop('active_branch_set', None)
+        self.runtime_properties.pop('active_branch_set', None)
 
     @property
     def git_version(self):
-        return ctx.instance.runtime_properties['git_version']
+        return self.runtime_properties['git_version']
 
     @git_version.setter
     def git_version(self, value):
-        ctx.instance.runtime_properties['git_version'] = value
+        self.runtime_properties['git_version'] = value
 
     @property
     def current_branch(self):
@@ -319,6 +315,14 @@ class GitRepo(object):
     @property
     def git_output(self):
         return self._git(log_out=False)
+
+    @property
+    def properties(self):
+        return ctx.node.properties
+
+    @property
+    def runtime_properties(self):
+        return ctx.instance.runtime_properties
 
     def _git(self, log_out):
         git = sh.git
