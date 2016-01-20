@@ -54,8 +54,8 @@ def pull(repo, **_):
 
 
 @repo_operation
-def status(repo, **_):
-    repo.status()
+def status(repo, active, **_):
+    repo.status(active)
 
 
 @repo_operation
@@ -123,7 +123,9 @@ class GitRepo(object):
             kwargs['tags'] = True
         self.git.pull(**kwargs).wait()
 
-    def status(self):
+    def status(self, active):
+        if active and not self.active_branch_set:
+            return
         for git_prompt_path in self.git_prompt_paths:
             if git_prompt_path.expanduser().exists():
                 break
@@ -285,7 +287,7 @@ class GitRepo(object):
     def active_branch_set(self):
         return BranchSet(
             self,
-            ctx.instance.runtime_properties.get('current_branch_set', {}))
+            ctx.instance.runtime_properties.get('active_branch_set', {}))
 
     @active_branch_set.setter
     def active_branch_set(self, value):

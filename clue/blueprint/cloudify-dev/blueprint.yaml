@@ -273,7 +273,10 @@ node_types:
         configure: self.operations.git.configure
       git:
         pull: self.operations.git.pull
-        status: self.operations.git.status
+        status:
+          implementation: self.operations.git.status
+          inputs:
+            active: {}
         checkout:
           implementation: self.operations.git.checkout
           inputs:

@@ -56,10 +56,16 @@ commands:
 
   git:
     status:
+      args:
+        - name: [-a, --active]
+          help: only display active branch set repos
+          default: false
       task: *sequential_tasks
       workflow: execute_operation
       parameters:
         operation: git.status
+        operation_kwargs:
+          active: { arg: active }
         type_names: [git_repo]
       event_cls: clue.output:NamedNodeEvent
 

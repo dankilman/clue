@@ -105,12 +105,14 @@ class TestGit(tests.BaseTest):
             self.assertEqual(initial_status, git.status().stdout.strip())
 
     def test_status(self):
-        repo_dir = self._install()
+        core_repo_dir, _, _ = self._install_repo_types_with_branches()
         output = self.clue.git.status().stdout.strip()
         self.assertRegexpMatches(output,
                                  r'.*cloudify-rest-client.*\| .*master')
-        self.clue.git.checkout('3.3.1-build')
-        with repo_dir:
+        self.assertIn('cloudify-script-plugin', output)
+        self.assertIn('flask-securest', output)
+        self.clue.git.checkout('.3.1-build')
+        with core_repo_dir:
             git.reset('HEAD~')
         output = self.clue.git.status().stdout.strip()
         self.assertRegexpMatches(output,
@@ -118,6 +120,14 @@ class TestGit(tests.BaseTest):
         self.assertRegexpMatches(output,
                                  r'.*cloudify-rest-client.*\| .*'
                                  r'M.*cloudify_rest_client/client.py')
+        # test active
+        with core_repo_dir:
+            git.reset('--hard', 'HEAD')
+        self.clue.git.checkout('test')
+        output = self.clue.git.status(active=True).stdout.strip()
+        self.assertIn('cloudify-rest-client', output)
+        self.assertNotIn('flask-securest', output)
+        self.assertNotIn('cloudify-script-plugin', output)
 
     def test_checkout(self):
         (core_repo_dir,
