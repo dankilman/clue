@@ -25,7 +25,7 @@ env_create:
       required: true
   inputs:
     repos_dir: { arg: repos_dir }
-    branches_file: { concat: [{ loader: storage_dir }, '/branches.yaml'] }
+    branches_file: { concat: [{ user_config: storage_dir }, '/branches.yaml'] }
 
 hooks:
   after_env_create: clue.hooks:after_env_create

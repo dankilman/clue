@@ -28,7 +28,7 @@ setup(
     install_requires=[
         'sh',
         'virtualenvwrapper',
-        'clash==0.10'
+        'clash==0.11'
     ],
     include_package_data=True,
     entry_points={
