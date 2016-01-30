@@ -16,7 +16,6 @@
 
 import os
 import sys
-import functools
 
 import sh
 import yaml
@@ -27,60 +26,6 @@ from cloudify import exceptions
 from cloudify.decorators import operation
 
 from common import bake
-
-
-def repo_operation(fn):
-    @operation
-    @functools.wraps(fn)
-    def wrapper(*args, **kwargs):
-        repo = GitRepo()
-        return fn(repo, *args, **kwargs)
-    return wrapper
-
-
-@repo_operation
-def clone(repo, **_):
-    repo.clone()
-
-
-@repo_operation
-def configure(repo, **_):
-    repo.configure()
-
-
-@repo_operation
-def pull(repo, **_):
-    repo.pull()
-
-
-@repo_operation
-def status(repo, active, **_):
-    repo.status(active)
-
-
-@repo_operation
-def checkout(repo, branch, **_):
-    repo.checkout(branch)
-
-
-@repo_operation
-def squash(repo, **_):
-    repo.squash()
-
-
-@repo_operation
-def reset(repo, hard, origin, **_):
-    repo.reset(hard, origin)
-
-
-@repo_operation
-def rebase(repo, **_):
-    repo.rebase()
-
-
-@repo_operation
-def diff(repo, revision_range, **_):
-    repo.diff(revision_range)
 
 
 class GitRepo(object):
@@ -151,7 +96,7 @@ class GitRepo(object):
         if self.branches_file.exists():
             branches = yaml.safe_load(self.branches_file.text()) or {}
         if branch in branches:
-            active_branch_set = BranchSet(self, branches[branch])
+            active_branch_set = BranchSet(branches[branch])
             active_branch_set['name'] = branch
             branch = active_branch_set.branch
             if not branch:
@@ -284,8 +229,7 @@ class GitRepo(object):
 
     @property
     def active_branch_set(self):
-        return BranchSet(
-            self, self.runtime_properties.get('active_branch_set', {}))
+        return BranchSet(self.runtime_properties.get('active_branch_set', {}))
 
     @active_branch_set.setter
     def active_branch_set(self, value):
@@ -351,12 +295,12 @@ class GitRepo(object):
             return branch
         template = '3{}' if self.type == 'core' else '1{}'
         return template.format(branch)
+repo = GitRepo()
 
 
 class BranchSet(dict):
 
-    def __init__(self, repo, initial):
-        self.repo = repo
+    def __init__(self, initial):
         self.update(initial)
 
     @property
@@ -369,9 +313,9 @@ class BranchSet(dict):
         if not repos:
             return None
         elif isinstance(repos, dict):
-            return repos.get(self.repo.name)
+            return repos.get(repo.name)
         elif isinstance(repos, list):
-            if self.repo.name in repos:
+            if repo.name in repos:
                 return self.get('branch')
             else:
                 return None
@@ -386,3 +330,15 @@ class BranchSet(dict):
     @property
     def base(self):
         return self.get('base', 'master')
+
+
+def func(repo_method):
+    @operation
+    def wrapper(**kwargs):
+        kwargs.pop('ctx', None)
+        return getattr(repo, repo_method)(**kwargs)
+    return wrapper
+
+for method in ['clone', 'configure', 'pull', 'status', 'checkout', 'reset',
+               'rebase', 'squash', 'diff']:
+    globals()[method] = func(method)
