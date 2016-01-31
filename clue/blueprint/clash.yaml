@@ -71,8 +71,15 @@ commands:
 
     diff:
       args:
-        - name: revision_range
+        - name: [-r, --revision-range]
           help: range to pass to git diff
+          default: ''
+        - name: [-a, --active]
+          help: only apply diff to active branch set repos
+          default: false
+        - name: [-c, --cached]
+          help: pass --cached to underlying 'git diff' command
+          default: false
       task: *sequential_tasks
       workflow: execute_operation
       parameters:
@@ -81,6 +88,8 @@ commands:
         allow_kwargs_override: true
         operation_kwargs:
           revision_range: { arg: revision_range }
+          active: { arg: active }
+          cached: { arg: cached }
       event_cls: clue.output:NamedNodeEvent
 
     pull:

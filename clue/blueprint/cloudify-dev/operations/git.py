@@ -171,21 +171,33 @@ class GitRepo(object):
         git.reset(merge_base, soft=True).wait()
         git.commit(message=commit_message).wait()
 
-    def diff(self, revision_range):
+    def diff(self, revision_range, cached, active):
+        if active and not self.active_branch_set:
+            return
         if self.type not in ['core', 'plugin']:
             return
-        split_range = revision_range.split('..')
-        if len(split_range) != 2:
-            ctx.logger.error(
-                'Invalid range supplied: {0}'.format(revision_range))
-            return
-        left = self._fix_branch_name(split_range[0])
-        right = self._fix_branch_name(split_range[1])
-        diff_range = '{0}..{1}'.format(left, right)
+
+        args = []
+        kwargs = {
+            'cached': cached
+        }
+
+        if revision_range:
+            split_by = '..'
+            split_range = revision_range.split(split_by)
+            if len(split_range) != 2:
+                ctx.logger.error(
+                    'Invalid range supplied: {0}'.format(revision_range))
+                return
+            left = self._fix_branch_name(split_range[0])
+            right = self._fix_branch_name(split_range[1])
+            diff_range = '{0}{1}{2}'.format(left, split_by, right)
+            args.append(diff_range)
+
         try:
-            self.git.diff(diff_range).wait()
+            self.git.diff(*args, **kwargs).wait()
         except sh.ErrorReturnCode:
-            ctx.logger.error('{0} diff failed'.format(diff_range))
+            ctx.logger.error('{0}, {1} diff failed'.format(args, kwargs))
 
     @property
     def location(self):

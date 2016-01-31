@@ -291,8 +291,9 @@ node_types:
         diff:
           implementation: self.operations.git.diff
           inputs:
-            revision_range:
-              default: ''
+            revision_range: {}
+            cached: {}
+            active: {}
         rebase: self.operations.git.rebase
         squash: self.operations.git.squash
         reset:

@@ -318,13 +318,39 @@ class TestGit(tests.BaseTest):
         test_reset(origin='origin')
 
     def test_diff(self):
-        self._install_repo_types()
+        core, _, _ = self._install_repo_types_with_branches()
         self.clue.git.checkout('.3.1-build')
         self.clue.git.checkout('.3-build')
-        output = self.clue.git.diff('.3-build...3.1-build').stdout.strip()
+        revision_range = '.3-build...3.1-build'
+        # test revision range
+        output = self.clue.git.diff(r=revision_range).stdout.strip()
         self.assertIn('cloudify-rest-client', output)
         self.assertIn('cloudify-script-plugin', output)
         self.assertNotIn('flask-securest', output)
+        self.assertNotIn('ERROR', output)
+        self.clue.git.checkout('test')
+        # test active
+        output = self.clue.git.diff(r=revision_range, a=True).stdout.strip()
+        self.assertIn('cloudify-rest-client', output)
+        self.assertNotIn('cloudify-script-plugin', output)
+        self.assertNotIn('flask-securest', output)
+        self.assertNotIn('ERROR', output)
+        with core:
+            git.reset('HEAD~')
+        # test plain
+        output = self.clue.git.diff(a=True).stdout.strip()
+        self.assertIn('cloudify-rest-client', output)
+        self.assertNotIn('ERROR', output)
+        output = self.clue.git.diff(a=True, c=True).stdout.strip()
+        self.assertEqual(0, len(output))
+        # test cached
+        with core:
+            git.add('.')
+        output = self.clue.git.diff(a=True, c=True).stdout.strip()
+        self.assertIn('cloudify-rest-client', output)
+        self.assertNotIn('ERROR', output)
+        output = self.clue.git.diff(a=True).stdout.strip()
+        self.assertEqual(0, len(output))
 
     def _install(self, repo=None, repo_base=None, properties=None,
                  git_config=None, clone_method=None):
