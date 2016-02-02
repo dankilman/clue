@@ -32,7 +32,7 @@ Setting Up The Environment
     .. code-block:: sh
 
         $ export CLUE_HOME=$HOME/clue
-        $ mkdir -p CLUE_HOME
+        $ mkdir -p $CLUE_HOME
 
 #. Create a ``clue`` environment in the work directory.
    You should choose a location that will serve as the root dir for GitHub
