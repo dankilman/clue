@@ -29,3 +29,4 @@ The code for ``clash`` lives `here <https://github.com/dankilman/clash>`_.
     inputs_yaml
     branch_sets
     additional_commands
+    advanced
