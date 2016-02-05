@@ -57,7 +57,8 @@ def before_init(blueprint, inputs, **kwargs):
                     'type': 'python_package',
                     'properties': {
                         'name': package_name,
-                        'path': python_package.get('path', '')
+                        'path': python_package.get('path', ''),
+                        'test': python_package.get('test', '')
                     },
                     'relationships': [
                         {'target': repo_node_template_name,

@@ -14,16 +14,31 @@
 # limitations under the License.
 ############
 
+import sh
+
 from clue import tests
 
 
 class TestNose(tests.BaseTest):
 
-    def test(self):
+    def test_basic(self):
+        self._test()
+
+    def test_explicit_test_dir(self):
+        with self.assertRaises(sh.ErrorReturnCode) as c:
+            self._test(test_dir='i_do_not_exist')
+        self.assertIn('No such file', c.exception.stdout)
+        self.assertIn('i_do_not_exist', c.exception.stdout)
+
+    def _test(self, test_dir=None):
         requirements = ['nose']
         repo = 'cloudify-rest-client'
         branch = '3.3'
         repos = {repo: {'properties': {'branch': branch}}}
+        if test_dir:
+            repos[repo]['python'] = {
+                'test': test_dir
+            }
         self.clue_install(repos=repos, requirements=requirements)
         output = self.clue.nose(repo).stdout.strip()
         self.assertTrue(output.endswith('OK'))
