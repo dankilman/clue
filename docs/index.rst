@@ -14,7 +14,8 @@ Clue - Cloudify Ultimate (Development) Environment
   additional features provided by ``clash``. That is not really important but
   I think it's cool, so I'm mentioning it.
 
-To get started, follow the :doc:`installation` page.
+To get started, follow the :doc:`installation` and the :doc:`getting_started`
+pages.
 
 The code lives `here <https://github.com/dankilman/clue>`_.
 
@@ -25,3 +26,4 @@ The code for ``clash`` lives `here <https://github.com/dankilman/clash>`_.
 
     installation
     getting_started
+    branch_sets

@@ -12,8 +12,8 @@ right now are :ref:`clone_method` and :ref:`virtualenv_name`.
 
 ``clue apply``
 ^^^^^^^^^^^^^^
-The first command you should run after your done editing the ``inputs.yaml`` file
-is:
+The first command you should run after you're done editing the ``inputs.yaml``
+file is:
 
 .. code-block:: sh
 
@@ -140,11 +140,53 @@ The ``clue git pull`` command is pretty straightforward, it simply runs
 
 ``clue git checkout``
 ^^^^^^^^^^^^^^^^^^^^^
-TODO
+The ``clue git checkout`` command if also pretty straightforward on the surface.
+Running
+
+.. code-block:: sh
+
+    $ clue git checkout my_branch
+
+will run ``git checkout my_branch`` in each managed repository. Repositories
+that have this branch will switch to it and repositories that don't, well, won't.
+You may see ``ERROR`` logging for checkouts that fail. This usually means that
+the specified branch does not exist for that repository and can be safely ignored.
+Note that it will only try switching for repositories of type ``core`` or ``plugin``.
+
+``clue git checkout`` does, however, have a few more tricks up its sleeves.
+
+Running ``clue git checkout default`` will checkout the default branch for each
+managed repository (by default, this value is ``master``, see the :ref:`repos`
+input section for more details)
+
+Running ``clue git checkout .3.1-build`` will checkout ``3.3.1-build`` branches
+for ``core`` repos and ``1.3.1-build`` branches for ``plugin`` repos. ``clue``
+sees the ``.`` prefix and prepends the major number according to the repo type.
+Because Cloudify no longer advances plugin versions alongside the core version,
+this feature should be considered deprecated, but it is still useful when you
+need to checkout a previously released Cloudify version.
+
+The last thing ``clue git checkout`` knows how to do is checkout a branch set.
+Branch sets are sets of repositories and their matching branches. They are covered
+thoroughly in :doc:`branch_sets`
 
 ``clue pip install``
 ^^^^^^^^^^^^^^^^^^^^
-TODO
+The ``clue pip install`` command will run ``pip install -e .`` for each managed
+python package, in the managed virtualenv. It will do so in the correct order
+(based on the dependencies in the ``repos`` inputs) so that if a package depends
+on another package, the latter will be installed first.
+
+Running this command is useful in two main scenarios:
+
+1. The last ``clue git pull`` command was executed while all core managed
+repositories were on ``master`` branch, and the current milestone version was
+recently bumped. Running ``clue pip install`` will bring all managed packages
+to the latest version in the managed virtualenv.
+
+2. ``clue git checkout .3.1-build`` was executed to checkout code of the ``3.3.1``
+Cloudify release. In this case, a single ``clue pip install`` will install all
+python packages in current release version.
 
 Additional Commands
 ^^^^^^^^^^^^^^^^^^^
@@ -237,6 +279,8 @@ and ``claw``.
     for this file, but if there is need, such feature will be implemented. (by
     me or by you).
 
+.. _repos:
+
 ``repos``
 ^^^^^^^^^
 The ``repos`` input is a dictionary that specifies all repositories that are
@@ -310,6 +354,7 @@ this can be overridden as explain in the following section.
 
     .. code-block:: yaml
 
+        repos:
           claw-scripts:
             properties:
               organization: dankilman
@@ -325,18 +370,29 @@ this can be overridden as explain in the following section.
 
     .. code-block:: yaml
 
-        cloudify-manager:
-          python:
-          - name: cloudify-rest-service
-            path: rest-service
-            dependencies:
-            - cloudify-dsl-parser
-            - flask-securest
-          - name: cloudify-workflows
-            path: workflows
-            dependencies:
-            - cloudify-plugins-common
+        repos:
+          cloudify-manager:
+            python:
+            - name: cloudify-rest-service
+              path: rest-service
+              dependencies:
+              - cloudify-dsl-parser
+              - flask-securest
+            - name: cloudify-workflows
+              path: workflows
+              dependencies:
+              - cloudify-plugins-common
 
+*   Each repository has a default branch set for it, which by default is ``master``.
+    You can override this by setting the ``branch`` property for a repository.
+
+     .. code-block:: yaml
+
+         repos:
+           cloudify-build-dashboard:
+             python: false
+             properties:
+               branch: gh-pages
 
 ``repos_dir``
 ^^^^^^^^^^^^^
