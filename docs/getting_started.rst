@@ -1,8 +1,8 @@
 Getting Started
 ===============
 
-Basic Usage
------------
+``inputs.yaml``
+---------------
 
 The ``inputs.yaml`` in ``clue``'s workdir, contains configuration for most
 aspects of environments managed by ``clue``.
@@ -85,3 +85,134 @@ and ``claw``.
     for this file, but if there is need, such feature will be implemented. (by
     me or by you).
 
+``repos``
+^^^^^^^^^
+The ``repos`` input is a dictionary that specifies all repositories that are
+managed by ``clue`` and for each, the python packages it contains.
+By default, each repository is assumed to also represent a python package but
+this can be overridden as explain in the following section.
+
+*   Each entry in this dictionary represents a single GitHub repository, for example:
+
+    .. code-block:: yaml
+
+        repos:
+          cloudify-rest-client:
+            type: core
+
+    The above represents an environment that contains a single
+    repository, ``cloudify-rest-client``. The organization is derived from the
+    ``organization`` input. The type ``core`` should be specified for all Cloudify
+    repositories who's version advances with the Cloudify version. We supplied
+    no ``python`` property, so be default, ``clue`` assumed this repository represents
+    a python package that is ``pip`` installable with no additional dependencies.
+
+*   Use the ``dependencies`` property to specify additional python dependencies a
+    python package has, for example:
+
+    .. code-block:: yaml
+
+        repos:
+          cloudify-rest-client:
+            type: core
+
+          cloudify-plugins-common:
+            type: core
+            python:
+              dependencies:
+              - cloudify-rest-client
+
+    The above builds upon the previous example and adds the ``cloudify-plugins-common``
+    repository. Notice that it specifies a dependency on the ``cloudify-rest-client``
+    python package.
+
+*   To tell ``clue`` that a certain repository does not represent a python package,
+    specify ``python: false``.
+
+    .. code-block:: yaml
+
+        repos:
+          docs.getcloudify.org:
+            python: false
+
+
+*   ``clue`` automatically add a python dependency on ``cloudify-plugins-common``
+    for repositories of type ``plugin``.
+
+    .. code-block:: yaml
+
+        repos:
+          cloudify-openstack-plugin:
+            type: plugin
+
+*   A repository that represents a python package and is not of ``core`` or ``plugin``
+    type, can be specified like this:
+
+    .. code-block:: yaml
+
+        repos:
+          flask-securest: {}
+
+*   You can override the default organization and parent directory for repositories
+    like this:
+
+    .. code-block:: yaml
+
+          claw-scripts:
+            properties:
+              organization: dankilman
+              location: /path/to/parent/repo/directory
+            python: false
+
+    The above tells ``clue`` to clone the ``claw-scripts`` repository from the ``dankilman``
+    organization and to use ``/path/to/parent/repo/directory`` as its base dir.
+
+*   There may be cases where a certain repository contains one or more python
+    packages that are not directly located in its root. In such cases, you can
+    specify a list of package definitions to the ``python`` property, like this:
+
+    .. code-block:: yaml
+
+        cloudify-manager:
+          python:
+          - name: cloudify-rest-service
+            path: rest-service
+            dependencies:
+            - cloudify-dsl-parser
+            - flask-securest
+          - name: cloudify-workflows
+            path: workflows
+            dependencies:
+            - cloudify-plugins-common
+
+
+``repos_dir``
+^^^^^^^^^^^^^
+The root directory to which all managed GitHub repositories will be cloned.
+The value for this inputs was supplied in the ``clue env create`` command.
+This value can be changed at any time to have ``clue`` manage a different
+root directory.
+
+.. note::
+    As explained in the ``repos`` input section, you can override the base dir
+    for each managed repository specifically. This allows you to have certain
+    repositories that will be managed by ``clue`` but will be located in base
+    directories.
+
+``requirements``
+^^^^^^^^^^^^^^^^
+A list of additional requirements that will be installed in the managed virtualenv.
+The default value contains ``flake8``, ``tox``, ``nose`` and a few other testing
+frameworks. You can update this list to your liking.
+
+``virtualenv_name``
+^^^^^^^^^^^^^^^^^^^
+The name of the ``virtualenvwrapper`` virtualenv. The default value is ``cloudify``.
+If this virtualenv already exists, ``clue`` will make use of it, otherwise, it will
+create a new virtualenv using ``mkvirtualenv {{virtualenv_name}}``.
+
+``virtualenvwrapper_path``
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+If ``virtualenvwrapper`` is installed system wide, the default value
+``virtualenvwrapper.sh`` can be used. Otherwise, a full path to this script
+should be supplied.
