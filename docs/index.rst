@@ -24,3 +24,4 @@ The code for ``clash`` lives `here <https://github.com/dankilman/clash>`_.
     :maxdepth: 2
 
     installation
+    getting_started
