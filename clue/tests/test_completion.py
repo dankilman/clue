@@ -53,12 +53,17 @@ class TestCompletion(tests.BaseTest):
         expected = builtin + user
         self.assert_completion(expected=expected,
                                args=['git'])
+
+        builtin = self.verbose_args + self.help_args
+        user = ['default']
+        expected = builtin + user
+        self.assert_completion(expected=expected, args=['git', 'checkout'])
+
         branches_yaml = self.workdir / 'branches.yaml'
         branches_yaml.write_text(yaml.safe_dump({
             'test1': {},
             'test2': {}
         }))
-        builtin = self.verbose_args + self.help_args
         user = ['default', 'test1', 'test2']
         expected = builtin + user
         self.assert_completion(expected=expected, args=['git', 'checkout'])

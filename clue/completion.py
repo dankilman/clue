@@ -32,7 +32,7 @@ def branches_completer(env, prefix, **kwargs):
         return []
     import yaml
     with open(branches_file) as f:
-        branches = yaml.safe_load(f)
+        branches = yaml.safe_load(f) or {}
     result = [k for k in branches if k.startswith(prefix)]
     if 'default'.startswith(prefix):
         result.append('default')
