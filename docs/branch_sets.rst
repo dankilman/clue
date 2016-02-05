@@ -64,6 +64,8 @@ repository, you can omit the ``branch`` property and pass a dictionary to the
         cloudify-rest-client: CFY-10102-rest-modifications
         cloudify-plugins-common: CFY-10102-new-api
 
+.. _base_branch:
+
 Base Branch
 -----------
 By default, all branches are assumed to be based out of the ``master`` branch.
@@ -77,3 +79,70 @@ you can override the base branch by specifying the ``base`` property.
       repos:
         cloudify-rest-client: CFY-10102-rest-modifications-m1
         cloudify-plugins-common: CFY-10102-new-api-m1
+
+Active Branch Set Git Related Commands
+--------------------------------------
+Now that we know about this *active branch set* concept, what does it actually
+give us, except for easily switching between sets of branches?
+
+Well, it gives some convenience, but not much more. Are you excited yet?
+
+``clue git status --active``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+After ``clue git checkout {{branch_set_name}}``, ``branch_set_name`` is the
+*active branch set*. If you want to see the status only for repositories that
+are part of the active branch set, you can can pass the ``--active/-a`` flag
+to the status command
+
+.. code-block:: sh
+
+    $ clue git status -a
+
+``clue git reset``
+^^^^^^^^^^^^^^^^^^
+If you wish to reset all changes made to repositories in the active branch set
+to their origin branch state, run:
+
+.. code-block:: sh
+
+    $ clue git reset
+
+To do a hard reset, pass ``--hard/-h``. To reset from a different origin than
+the default ``origin``, pass ``--origin=MY_REMOTE``.
+
+``clue git squash``
+^^^^^^^^^^^^^^^^^^^
+If you wish to squash all commits for each branch in the active branch set, run:
+
+.. code-block:: sh
+
+    $ clue git squash
+
+For each repository, ``clue`` will squash all commits that come after the branch
+set ``base`` (``master`` by default, see :ref:`base_branch`), to a single commit. (If there is only one
+commit already, no action will take place for that repository).
+
+.. warning::
+    For any branch whose state before the squash was already pushed to origin,
+    a subsequent ``git push -f`` will be required. Use with care, and certainly
+    never use this on branches for which you are not the only active developer.
+
+``clue git rebase``
+^^^^^^^^^^^^^^^^^^^
+A complementary command to the previous ``clue git squash`` is the ``rebase``
+command, which will, as its name implies, rebase each branch in the active branch
+set, on top of the branch set ``base``.
+
+.. code-block:: sh
+
+    $ clue git rebase
+
+If a clean rebase cannot be performed,
+the rebase for that branch will be aborted. You will usually run this command
+after running ``clue git squash`` when your prepare your branches for a pull
+request.
+
+.. warning::
+    For any branch whose state before the rebase was already pushed to origin,
+    a subsequent ``git push -f`` will be required. Use with care, and certainly
+    never use this on branches for which you are not the only active developer.
