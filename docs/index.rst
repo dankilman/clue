@@ -26,4 +26,5 @@ The code for ``clash`` lives `here <https://github.com/dankilman/clash>`_.
 
     installation
     getting_started
+    inputs_yaml
     branch_sets
