@@ -22,7 +22,7 @@ The code lives `here <https://github.com/dankilman/clue>`_.
 The code for ``clash`` lives `here <https://github.com/dankilman/clash>`_.
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
 
     installation
     getting_started
