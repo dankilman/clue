@@ -1,6 +1,16 @@
 Getting Started
 ===============
 
+Basic Usage
+-----------
+
+The following section describes some of the more common commands that you will
+be using in your day to day interactions with ``clue``. Before you continue
+with this section, make sure you read the ``inputs.yaml`` section below.
+You don't have to read all of it now. The important inputs you should look at
+right now are :ref:`clone_method` and :ref:`virtualenv_name`.
+
+
 ``inputs.yaml``
 ---------------
 
@@ -17,6 +27,8 @@ The ``branches_file`` input points to the location of the ``branches.yaml`` used
 by ``clue``. The default value already point to a file that was generated during
 environment creation. You can leave the default value as is for now. When we
 talk about *Active Branch Sets*, we'll get back to this file.
+
+.. _clone_method:
 
 ``clone_method``
 ^^^^^^^^^^^^^^^^
@@ -204,6 +216,8 @@ root directory.
 A list of additional requirements that will be installed in the managed virtualenv.
 The default value contains ``flake8``, ``tox``, ``nose`` and a few other testing
 frameworks. You can update this list to your liking.
+
+.. _virtualenv_name:
 
 ``virtualenv_name``
 ^^^^^^^^^^^^^^^^^^^
