@@ -76,7 +76,7 @@ class TestCompletion(tests.BaseTest):
 
     def test_nose(self):
         builtin = self.help_args + self.verbose_args
-        user = ['cloudify-dsl-parser-package']
+        user = ['cloudify-dsl-parser']
         expected = builtin + user
         self.assert_completion(expected=expected, args=['nose'])
 

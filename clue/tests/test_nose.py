@@ -25,5 +25,5 @@ class TestNose(tests.BaseTest):
         branch = '3.3'
         repos = {repo: {'properties': {'branch': branch}}}
         self.clue_install(repos=repos, requirements=requirements)
-        output = self.clue.nose('{}-package'.format(repo)).stdout.strip()
+        output = self.clue.nose(repo).stdout.strip()
         self.assertTrue(output.endswith('OK'))

@@ -156,7 +156,7 @@ commands:
     workflow: execute_operation
     parameters:
       operation: nose.run
-      node_ids: [{ arg: package }]
+      node_ids: [{ concat: [{ arg: package }, '-package'] }]
     event_cls: clue.output:NoseEvent
 
 task:
