@@ -18,7 +18,7 @@ from setuptools import setup
 
 setup(
     name='clue',
-    version='0.28',
+    version='0.29',
     author='GigaSpaces',
     author_email='cosmo-admin@gigaspaces.com',
     packages=['clue'],
@@ -28,7 +28,7 @@ setup(
     install_requires=[
         'sh',
         'virtualenvwrapper',
-        'clash==0.11'
+        'clash==0.12'
     ],
     include_package_data=True,
     entry_points={
