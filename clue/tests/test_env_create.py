@@ -50,16 +50,27 @@ class TestEnvCreate(tests.BaseTest):
         self._test()
         self._test(reset=True)
 
+    def test_args(self):
+        custom_kwargs = {
+            'clone_method': 'ssh',
+            'virtualenv_name': 'my_virtualenv',
+            'organization': 'my_org'
+        }
+        self._test(custom_kwargs=custom_kwargs)
+
     def _test(self,
               storage_dir=None,
               editable=False,
               reset=False,
-              name=None):
+              name=None,
+              custom_kwargs=None):
         kwargs = {
             'editable': editable,
             'repos_dir': self.repos_dir,
             'reset': reset
         }
+        if custom_kwargs:
+            kwargs.update(custom_kwargs)
         if storage_dir:
             kwargs['storage_dir'] = storage_dir
         else:
@@ -83,3 +94,6 @@ class TestEnvCreate(tests.BaseTest):
                     'register_python_argcomplete', 'requirements',
                     'constraints', 'git_config']:
             self.assertIn(key, inputs)
+        if custom_kwargs:
+            for key, value in custom_kwargs.items():
+                self.assertEqual(value, inputs[key])

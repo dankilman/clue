@@ -42,7 +42,8 @@ class TestCompletion(tests.BaseTest):
         builtin = ['--storage-dir', '-s', '--editable', '-e', '--reset', '-r',
                    '-n', '--name']
         builtin += self.help_args
-        user = ['-d', '--repos-dir']
+        user = ['-d', '--repos-dir', '--virtualenv-name', '--clone-method',
+                '--organization']
         expected = builtin + user
         self.assert_completion(expected=expected, args=['env', 'create'])
 

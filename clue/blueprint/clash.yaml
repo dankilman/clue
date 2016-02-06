@@ -23,8 +23,21 @@ env_create:
     - name: [-d, --repos-dir]
       help: where to clone stuff to
       required: true
+    - name: --virtualenv-name
+      help: the virtualenwrapper virtualenv name to create/manage
+      default: cloudify
+    - name: --clone-method
+      choices: [http, ssh]
+      help: The clone method to be used when cloning GitHub repositories
+      default: http
+    - name: --organization
+      help: The default GitHub organization to use when cloning GitHub repositories
+      default: cloudify-cosmo
   inputs:
     repos_dir: { arg: repos_dir }
+    clone_method: { arg: clone_method }
+    virtualenv_name: { arg: virtualenv_name }
+    organization: { arg: organization }
     branches_file: { concat: [{ user_config: storage_dir }, '/branches.yaml'] }
 
 hooks:
