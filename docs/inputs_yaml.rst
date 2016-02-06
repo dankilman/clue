@@ -30,8 +30,8 @@ can change this value to your liking.
 
 ``git_config``
 --------------
-You can specify a key/value pairs that will be set globally on each repo that
-is managed by ``clue``, for example, if you have something like this in your inputs
+You can specify key/value pairs that will be set on each repo that is managed
+by ``clue``, for example, if you have something like this in your inputs
 
 .. code-block:: yaml
 
@@ -91,7 +91,7 @@ and ``claw``.
 The ``repos`` input is a dictionary that specifies all repositories that are
 managed by ``clue`` and for each, the python packages it contains.
 By default, each repository is assumed to also represent a python package but
-this can be overridden as explain in the following section.
+this can be overridden as explained in the following section.
 
 *   Each entry in this dictionary represents a single GitHub repository, for example:
 
@@ -105,7 +105,7 @@ this can be overridden as explain in the following section.
     repository, ``cloudify-rest-client``. The organization is derived from the
     ``organization`` input. The type ``core`` should be specified for all Cloudify
     repositories who's version advances with the Cloudify version. We supplied
-    no ``python`` property, so be default, ``clue`` assumed this repository represents
+    no ``python`` property, so by default, ``clue`` assumes this repository represents
     a python package that is ``pip`` installable with no additional dependencies.
 
 *   Use the ``dependencies`` property to specify additional python dependencies a
@@ -137,7 +137,7 @@ this can be overridden as explain in the following section.
             python: false
 
 
-*   ``clue`` automatically add a python dependency on ``cloudify-plugins-common``
+*   ``clue`` automatically adds a python dependency on ``cloudify-plugins-common``
     for repositories of type ``plugin``.
 
     .. code-block:: yaml
@@ -209,8 +209,8 @@ root directory.
 .. note::
     As explained in the ``repos`` input section, you can override the base dir
     for each managed repository specifically. This allows you to have certain
-    repositories that will be managed by ``clue`` but will be located in base
-    directories.
+    repositories that will be managed by ``clue`` but will be located in different
+    base directories.
 
 ``requirements``
 ----------------

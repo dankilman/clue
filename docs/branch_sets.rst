@@ -1,7 +1,7 @@
 Branch Sets
 ===========
 
-*Branch Sets* is a concept introduced by ``clue`` to simplify to process of working
+*Branch Sets* is a concept introduced by ``clue`` to simplify the process of working
 with multiple repositories during feature development.
 
 Some of the ``clue git`` subcommands only apply to branch sets, some have additional
@@ -14,7 +14,7 @@ Branch sets are configured in the ``branches.yaml`` file that was generated when
     Making modifications to the ``branches.yaml`` file, does not require
     running ``clue apply`` for them to take place. Making modifications
     to the active branch set, does however require that you ``clue git checkout``
-    the branch set, again for the changes to take places. (explanations follow)
+    the branch set again, for the changes to take places. (explanations follow)
 
 Basic Usage
 -----------

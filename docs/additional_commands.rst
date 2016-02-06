@@ -43,12 +43,15 @@ now, is (almost) equivalent to running:
     $ cd /path/to/cloudify-dsl-parser
     $ nosetests --nocapture --nologcapture --verbose dsl_parser/tests
 
+.. tip::
+    Bash completion is available for python package names.
+
 ``clue git diff``
 ^^^^^^^^^^^^^^^^^
 You can use ``clue git diff`` to perform an aggregated ``git diff`` command
 on all repositories or only repositories that are part of the *active branch set*
 
-The ``clue git diff`` command supports to variants.
+The ``clue git diff`` command supports two variants:
 
 1. ``git diff [--cached]`` which can be used to perform a simple ``git diff``
    command on each repository.

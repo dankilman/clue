@@ -40,7 +40,7 @@ virtualenv, so you would usually ``workon {{virtualenv_name}}`` when running
 you wish to run some ``clue`` command).
 
 It's worth mentioning that some of the configurable aspects in your managed
-environment, are additive. i.e. if you remove a repository, it will not be removed
+environment are additive. i.e. if you remove a repository, it will not be removed
 from the file system, it will simply no longer be managed by ``clue``.
 These inputs are: ``repos``, ``git_config``, and ``requirements``.
 Also note, that removing python package definitions will not uninstall a
@@ -53,7 +53,7 @@ previously installed package.
 repositories together. The first thing you need when managing multiple repositories
 is to know what is their status. This is where ``clue git status`` comes into play.
 
-It's output will look a bit like this:
+Its output will look a bit like this:
 
 .. code-block:: sh
 
@@ -86,7 +86,7 @@ It's output will look a bit like this:
      cloudify-openstack-plugin    | master=
      cloudify-cli                 | master=
 
-For each repository, it's current branch name is displayed and the repo status.
+For each repository, its current branch name is displayed and the repo status.
 
 Let's make this more interesting by making some changes to our repos.
 
@@ -183,7 +183,7 @@ to the latest version in the managed virtualenv.
 
 2. ``clue git checkout .3.1-build`` was executed to checkout code of the ``3.3.1``
 Cloudify release. In this case, a single ``clue pip install`` will install all
-python packages in current release version.
+python packages in the current release version.
 
 Additional Commands
 -------------------
