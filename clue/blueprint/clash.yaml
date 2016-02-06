@@ -27,9 +27,9 @@ env_create:
       help: the virtualenwrapper virtualenv name to create/manage
       default: cloudify
     - name: --clone-method
-      choices: [http, ssh]
+      choices: [https, ssh]
       help: The clone method to be used when cloning GitHub repositories
-      default: http
+      default: https
     - name: --organization
       help: The default GitHub organization to use when cloning GitHub repositories
       default: cloudify-cosmo
