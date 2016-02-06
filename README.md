@@ -3,4 +3,4 @@
 # Clue
 Cloudify Ultimate (Development) Environment - It's in the game.
 
-Documentation lives at http://clue.readthedocs.org.
+Documentation lives at https://clue.readthedocs.org.

@@ -19,7 +19,7 @@ pages.
 
 The code lives `here <https://github.com/dankilman/clue>`_.
 
-The code for ``clash`` lives `here <https://github.com/dankilman/clash>`_.
+Documentation for ``clash`` can be found `here <https://clash.readthedocs.org>`_.
 
 .. toctree::
     :maxdepth: 3
