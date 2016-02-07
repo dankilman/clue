@@ -55,6 +55,10 @@ inputs:
           - cloudify-rest-client
       cloudify-manager:
         type: core
+        properties:
+          project_dir: true
+          resources:
+          - resources
         python:
         - name: cloudify-rest-service
           path: rest-service
@@ -109,6 +113,8 @@ inputs:
         python: false
       cloudify-manager-blueprints:
         type: core
+        properties:
+          resources: true
         python: false
       cloudify-plugin-template:
         type: core
@@ -267,6 +273,17 @@ node_types:
         default: { get_input: git_config }
       git_prompt_paths:
         default: { get_input: git_prompt_paths }
+      project_dir:
+        description: >
+          Should this repo serve as the project dir for the generated idea
+          project.
+        default: false
+      resources:
+        description: >
+          Should this repo be added as a resources module to the generated
+          idea project.
+          Can also be a list of directories relative to the repository root
+        default: false
     interfaces:
       cloudify.interfaces.lifecycle:
         create: self.operations.git.clone
@@ -381,6 +398,15 @@ node_types:
           implementation: self.operations.pip.install_packages
           inputs: {}
 
+  idea_project:
+    derived_from: cloudify.nodes.Root
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        start:
+          implementation: self.operations.idea.create_idea_project
+          inputs:
+            virtualenv_name: {}
+
 relationships:
 
   package_depends_on_repo:
@@ -471,6 +497,14 @@ node_templates:
     relationships:
       - target: pre_package_installer
         type: cloudify.relationships.depends_on
+
+  idea_project:
+    type: idea_project
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        start:
+          inputs:
+            virtualenv_name: { get_property: [virtualenv, name] }
 
 plugins:
   self:

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      {% for module_path in module_paths %}
+      <module fileurl="file://{{module_path}}" filepath="{{module_path}}" />
+      {% endfor %}
+    </modules>
+  </component>
+</project>
