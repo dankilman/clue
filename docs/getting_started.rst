@@ -46,6 +46,55 @@ These inputs are: ``repos``, ``git_config``, and ``requirements``.
 Also note, that removing python package definitions will not uninstall a
 previously installed package.
 
+.. note::
+
+    The following goes into details explaining what actually happens when you
+    run ``clue apply``. It is certainly not crucial, for you to start using
+    ``clue`` effectively, but can't hurt either. Feel free to skip this section
+    for now.
+
+    1. * If a ``virtualenvwrapper`` virtualenv with the specified name does not
+         exist, one will be created.
+       * In addition, if ``constraints`` was specified, a ``constraints.txt`` file
+         with the constraints content, is copied to the virtualenv root.
+         The path to this file will be passed using ``-c PATH_TO_CONSTRAINTS.txt``
+         to every ``pip install`` command performed by ``clue``.
+       * A symlink to ``clue`` is copied to the virtualenv's ``bin`` directory
+       * A ``postactivate`` script is generated in the virtualenv ``bin`` directory
+         that will register the specified ``register_python_argcomplete`` values.
+       * A script named ``git-retag-cloudify`` is copied to the virtualenv ``bin``
+         directory. With this script in place, you can run ``git retag-cloudify``
+         from within repositories that are currently on the ``3.XXX-build`` branch
+         and it will retag the repo and push the updated tag to GitHub. The tag is
+         extracted for you from the branch name. Also note that it will not do anything
+         if the current branch does not match a ``XXXXX-build`` regex.
+    2. * For each repository defined, if the repository directory does not exist
+         in the repos_dir (or a custom location specified for that repository),
+         it will be cloned into that directory, using ``clone_method`` which is
+         ``https`` by default, or ``ssh`` if overridden by you.
+       * For each repository, a ``commit-msg`` git hook is copied to the repo's
+         ``.git/hooks`` dir. This hook will prepend the ``CFY-XXXX`` prefix
+         to your commit messages if it sees you did not add one and the current
+         branch you are on starts with ``CFY-XXXX-``.
+       * For each repository, if a ``git_config`` configuration was provided,
+         a sequence of ``git config {{key}} {{value}}`` commands will be executed
+         for that repo, with the key/values provided.
+    3. * All requirements specified in the ``requirements`` input are installed
+         in the managed virtualenv. (``constraints`` are taken under consideration).
+       * All python packages specified in the ``repos`` input (implicitly or
+         explicitly) will be installed in editable mode, in the correct order,
+         based on the dependencies specified. (``constraints`` are taken under
+         consideration).
+    4. If ``docs.getcloudify.org`` and ``docs.getcloudify.org-site`` are both
+       clone, a file named ``config.json`` is copied the ``docs.getcloudify.org-site``
+       repo under the ``dev`` directory. This file points to the documentation
+       repo so that the ``site`` repo knows where to find it. If you ever built
+       Cloudify's documentation, you should understand what this means.
+    5. If ``project_dir: true`` is specified for one of the repos then Intellij
+       Idea project files will be generated. Each python module will be configured.
+       An ``.idea`` directory will be created inside the ``project_dir`` repo.
+       This means that in order to use the project, you need to open an existing
+       project and point to that directory.
 
 ``clue git status``
 -------------------

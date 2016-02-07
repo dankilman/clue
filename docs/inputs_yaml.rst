@@ -191,13 +191,42 @@ this can be overridden as explained in the following section.
 *   Each repository has a default branch set for it, which by default is ``master``.
     You can override this by setting the ``branch`` property for a repository.
 
+    .. code-block:: yaml
+
+        repos:
+          cloudify-build-dashboard:
+            python: false
+            properties:
+              branch: gh-pages
+
+*    You can have ``clue`` generate Intellij Idea project files. To do so,
+     specify ``project_dir: true`` in one of the repos properties.
+     All managed python packages will be added as python modules to the generated
+     project. In addition you can specify ``resources: true`` in non-python
+     repositories, to have the repository added as a resources module to the
+     generated project. If wish to add directories relative to a certain repo
+     and not its root, you can pass a list of relative paths to ``resources``
+     instead of ``true``. The following is in example extracted from the default
+     ``repos`` input.
+
      .. code-block:: yaml
 
-         repos:
-           cloudify-build-dashboard:
-             python: false
-             properties:
-               branch: gh-pages
+          repos:
+            cloudify-manager:
+              properties:
+                project_dir: true
+                resources:
+                # add the cloudify-manager/resources dir
+                - resources
+            cloudify-manager-blueprints:
+              python: false
+              properties:
+                resources: true
+
+     To open the generated project, point Intellij to the project dir repo.
+
+     .. note::
+        At most, one project dir can be specified.
 
 ``repos_dir``
 -------------
