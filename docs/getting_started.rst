@@ -94,7 +94,7 @@ previously installed package.
        Idea project files will be generated. Each python module will be configured.
        An ``.idea`` directory will be created inside the ``project_dir`` repo.
        This means that in order to use the project, you need to open an existing
-       project and point to that directory.
+       project and point to the repo directory.
 
 ``clue git status``
 -------------------

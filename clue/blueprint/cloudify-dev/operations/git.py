@@ -14,6 +14,7 @@
 # limitations under the License.
 ############
 
+import json
 import os
 import sys
 
@@ -58,8 +59,15 @@ class GitRepo(object):
         # git config
         for key, value in self.git_config.items():
             self.git.config(key, value).wait()
+        if self.type == 'versions':
+            self.versions_repo_location = self.repo_location
 
     def pull(self):
+        try:
+            self.git_output('rev-parse', '@{u}')
+        except sh.ErrorReturnCode:
+            ctx.logger.info('No upstream defined. Skipping pull.')
+            return
         kwargs = {'prune': True}
         if self.git_version >= 'git version 2.0.0':
             kwargs['tags'] = True
@@ -90,12 +98,26 @@ class GitRepo(object):
         self.git.status(s=True).wait()
 
     def checkout(self, branch):
+        versions_prefix = '::'
         default_branch = self.branch
         active_branch_set = None
         branches = {}
         if self.branches_file.exists():
             branches = yaml.safe_load(self.branches_file.text()) or {}
-        if branch in branches:
+        if branch.startswith(versions_prefix):
+            versions_branch = branch[len(versions_prefix):]
+            repo_git = self._git(
+                log_out=False,
+                repo_location=self.versions_repo_location)
+            versions = json.loads(repo_git.show(
+                '{}:versions.json'.format(versions_branch)).stdout.strip())
+            if self.name in versions:
+                branch = versions[self.name]
+            elif self.type in ['core', 'versions']:
+                branch = versions_branch
+            else:
+                branch = default_branch
+        elif branch in branches:
             active_branch_set = BranchSet(branches[branch])
             active_branch_set['name'] = branch
             branch = active_branch_set.branch
@@ -106,7 +128,7 @@ class GitRepo(object):
             branch = default_branch
         elif self.type == 'misc':
             return
-        elif self.type not in ['core', 'plugin']:
+        elif self.type not in ['core', 'plugin', 'versions']:
             raise exceptions.NonRecoverableError('Unhandled repo type: {}'
                                                  .format(self.type))
         elif not branch:
@@ -280,14 +302,29 @@ class GitRepo(object):
     def runtime_properties(self):
         return ctx.instance.runtime_properties
 
-    def _git(self, log_out):
+    @property
+    def versions_repo_location(self):
+        with open(ctx._endpoint.storage._payload_path) as f:
+            return path(json.load(f)['versions_repo_location'])
+
+    @versions_repo_location.setter
+    def versions_repo_location(self, value):
+        with ctx._endpoint.storage.payload() as payload:
+            current_value = payload.get('versions_repo_location')
+            if current_value and current_value != value:
+                raise exceptions.NonRecoverableError(
+                    'only one repository can be marked with "versions" type')
+            payload['versions_repo_location'] = value
+
+    def _git(self, log_out, repo_location=None):
+        repo_location = repo_location or self.repo_location
         git = sh.git
         if log_out:
             git = bake(git)
         return git.bake(
             '--no-pager',
-            '--git-dir', self.repo_location / '.git',
-            '--work-tree', self.repo_location)
+            '--git-dir', repo_location / '.git',
+            '--work-tree', repo_location)
 
     def _validate_branch_set(self):
         if not self.active_branch_set:

@@ -15,7 +15,7 @@
 ############
 
 
-def package_completer(env, prefix, **kwargs):
+def package_completer(env, prefix, **_):
     nodes = env.storage.get_nodes()
     suffix_len = len('-package')
     return (n.id[:-suffix_len] for n in nodes
@@ -23,18 +23,33 @@ def package_completer(env, prefix, **kwargs):
             n.id.startswith(prefix))
 
 
-def branches_completer(env, prefix, **kwargs):
-    branches_file = env.plan['inputs'].get('branches_file')
-    if not branches_file:
-        return []
-    import os
-    branches_file = os.path.expanduser(branches_file)
-    if not os.path.exists(branches_file):
-        return []
-    import yaml
-    with open(branches_file) as f:
-        branches = yaml.safe_load(f) or {}
-    result = [k for k in branches if k.startswith(prefix)]
-    if 'default'.startswith(prefix):
-        result.append('default')
-    return result
+def branches_completer(env, prefix, **_):
+    versions_prefix = '::'
+    if prefix.startswith(versions_prefix):
+        from path import path
+        from sh import git
+        import json
+        with open(env.storage._payload_path) as f:
+            versions_repo_location = path(
+                json.load(f)['versions_repo_location'])
+        with versions_repo_location:
+            result = git('show-ref').stdout.split('\n')
+            result = ['{}{}'.format(versions_prefix,
+                                    r.strip().rsplit('/', 1)[-1])
+                      for r in result]
+            return [r for r in result if r.startswith(prefix)]
+    else:
+        branches_file = env.plan['inputs'].get('branches_file')
+        if not branches_file:
+            return []
+        import os
+        branches_file = os.path.expanduser(branches_file)
+        if not os.path.exists(branches_file):
+            return []
+        import yaml
+        with open(branches_file) as f:
+            branches = yaml.safe_load(f) or {}
+        result = [k for k in branches if k.startswith(prefix)]
+        if 'default'.startswith(prefix):
+            result.append('default')
+        return result
