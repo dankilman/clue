@@ -58,6 +58,9 @@ commands:
   install:
     workflow: install
 
+  branch:
+    function: clue.functions:branch
+
   pip:
     install:
       workflow: execute_operation
