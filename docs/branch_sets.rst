@@ -146,3 +146,39 @@ request.
     For any branch whose state before the rebase was already pushed to origin,
     a subsequent ``git push -f`` will be required. Use with care, and certainly
     never use this on branches for which you are not the only active developer.
+
+
+``clue branch``
+^^^^^^^^^^^^^^^
+The ``clue branch`` command will give you a quick look of what you have
+configured in your ``branches.yaml`` file. It will also indicate the
+currently active branch set with a red * to the left of the branch set name
+(if there is one).
+
+For example (the actual output is nicely colored):
+
+.. code-block:: sh
+
+    $ clue branch
+      delete-logs:
+        branch: CFY-4864-delete-deployment-logs
+        repos:
+        - cloudify-manager
+
+      testing:
+        repos:
+          cloudify-agent: CFY-12312-agent-fixes
+          cloudify-plugins-common: CFY-12312-common-fixes
+
+      lifecycle:
+        branch: CFY-4470-extendable-lifecycle
+        base: 3.4m2-build
+        repos:
+        - cloudify-manager
+        - cloudify-plugins-common
+
+    * plugins:
+        branch: CFY-4863-install-plugins
+        repos:
+        - cloudify-manager
+        - cloudify-agent
