@@ -34,7 +34,7 @@ class TestCompletion(tests.BaseTest):
 
     def test_clue(self):
         builtin = ['init', 'status', 'env', 'apply'] + self.help_args
-        user = ['git', 'nose', 'pip', 'install']
+        user = ['git', 'nose', 'pip', 'install', 'branch']
         expected = builtin + user
         self.assert_completion(expected=expected)
 
