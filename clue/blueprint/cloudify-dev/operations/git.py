@@ -23,8 +23,10 @@ import yaml
 from path import path
 
 from cloudify import ctx
+from cloudify.workflows import ctx as workflow_ctx
 from cloudify import exceptions
 from cloudify.decorators import operation
+from cloudify.decorators import workflow
 
 from common import bake
 
@@ -74,7 +76,7 @@ class GitRepo(object):
         self.git.pull(**kwargs).wait()
 
     def status(self, active):
-        if active and not self.active_branch_set:
+        if active and not self.active_feature.branch:
             return
         for git_prompt_path in self.git_prompt_paths:
             if git_prompt_path.expanduser().exists():
@@ -100,30 +102,29 @@ class GitRepo(object):
     def checkout(self, branch):
         versions_prefix = '::'
         default_branch = self.branch
-        active_branch_set = None
-        branches = {}
-        if self.branches_file.exists():
-            branches = yaml.safe_load(self.branches_file.text()) or {}
+        active_feature = self.active_feature
         if branch.startswith(versions_prefix):
             versions_branch = branch[len(versions_prefix):]
             repo_git = self._git(
                 log_out=False,
                 repo_location=self.versions_repo_location)
-            versions = json.loads(repo_git.show(
-                '{}:versions.json'.format(versions_branch)).stdout.strip())
-            if self.name in versions:
-                branch = versions[self.name]
+            try:
+                raw_versions = repo_git.show(
+                    '{}:versions.yaml'.format(versions_branch)).stdout.strip()
+            except sh.ErrorReturnCode:
+                raw_versions = repo_git.show(
+                    'origin/{}:versions.yaml'.format(
+                        versions_branch)).stdout.strip()
+            versions = yaml.safe_load(raw_versions)
+            components = versions.get('components', {})
+            if self.name in components:
+                branch = components[self.name]
             elif self.type in ['core', 'versions']:
                 branch = versions_branch
             else:
                 branch = default_branch
-        elif branch in branches:
-            active_branch_set = BranchSet(branches[branch])
-            active_branch_set['name'] = branch
-            branch = active_branch_set.branch
-            if not branch:
-                branch = default_branch
-                active_branch_set = None
+        elif active_feature.name == branch:
+            branch = active_feature.branch or default_branch
         elif branch == 'default':
             branch = default_branch
         elif self.type == 'misc':
@@ -136,24 +137,21 @@ class GitRepo(object):
         elif branch.startswith('.'):
             branch = self._fix_branch_name(branch)
         try:
-            self.git.checkout(branch).wait()
-            if active_branch_set:
-                self.active_branch_set = active_branch_set
-            else:
-                del self.active_branch_set
+            if self.current_branch != branch:
+                self.git.checkout(branch).wait()
         except sh.ErrorReturnCode:
             ctx.logger.error('Could not checkout branch {0}'.format(branch))
 
     def reset(self, hard, origin):
-        if not self._validate_branch_set():
+        if not self._validate_active_feature():
             return
         self.git.reset.bake(hard=hard)(
             '{0}/{1}'.format(origin, self.current_branch)).wait()
 
     def rebase(self):
-        if not self._validate_branch_set():
+        if not self._validate_active_feature():
             return
-        base = self.active_branch_set.base
+        base = self.active_feature.base
         try:
             base = self._fix_branch_name(base)
             self.git.rebase(base).wait()
@@ -165,13 +163,13 @@ class GitRepo(object):
                 pass
 
     def squash(self):
-        if not self._validate_branch_set():
+        if not self._validate_active_feature():
             return
         if self.git_version < 'git version 1.9':
             ctx.logger.warn('git version >= 1.9 is required for squash.')
             return
         git = self.git_output
-        base = self.active_branch_set.base
+        base = self.active_feature.base
         base = self._fix_branch_name(base)
         merge_base = git.bake('merge-base', fork_point=True)(
                 base).stdout.strip()
@@ -194,7 +192,7 @@ class GitRepo(object):
         git.commit(message=commit_message).wait()
 
     def diff(self, revision_range, cached, active):
-        if active and not self.active_branch_set:
+        if active and not self.active_feature.branch:
             return
         if self.type not in ['core', 'plugin']:
             return
@@ -220,6 +218,23 @@ class GitRepo(object):
             self.git.diff(*args, **kwargs).wait()
         except sh.ErrorReturnCode:
             ctx.logger.error('{0}, {1} diff failed'.format(args, kwargs))
+
+    def create_branch(self, branch, base):
+        if not self._branch_exists(branch):
+            self.git.branch(branch, base).wait()
+
+    def delete_branch(self, branch, force):
+        if self._branch_exists(branch, local_only=True):
+            if self.current_branch == branch:
+                self.git.checkout(self.branch).wait()
+            try:
+                delete_flag = '-D' if force else '-d'
+                self.git.branch(delete_flag, branch).wait()
+            except sh.ErrorReturnCode:
+                ctx.logger.error('Failed deleting branch {0}.'.format(branch))
+
+    def branch_exists(self, branch):
+        return self._branch_exists(branch)
 
     @property
     def location(self):
@@ -256,22 +271,6 @@ class GitRepo(object):
     @property
     def git_prompt_paths(self):
         return [path(p) for p in self.properties['git_prompt_paths']]
-
-    @property
-    def branches_file(self):
-        return path(self.properties['branches_file'])
-
-    @property
-    def active_branch_set(self):
-        return BranchSet(self.runtime_properties.get('active_branch_set', {}))
-
-    @active_branch_set.setter
-    def active_branch_set(self, value):
-        self.runtime_properties['active_branch_set'] = dict(value)
-
-    @active_branch_set.deleter
-    def active_branch_set(self):
-        self.runtime_properties.pop('active_branch_set', None)
 
     @property
     def git_version(self):
@@ -316,6 +315,23 @@ class GitRepo(object):
                     'only one repository can be marked with "versions" type')
             payload['versions_repo_location'] = value
 
+    @property
+    def active_feature(self):
+        with open(ctx._endpoint.storage._payload_path) as f:
+            active_feature = json.load(f).get('active_feature')
+        if not active_feature:
+            return Feature({})
+        branches = {}
+        features_file = path(self.properties['features_file'])
+        if features_file.exists():
+            branches = yaml.safe_load(features_file.text()) or {}
+        if not branches:
+            return Feature({})
+        name = active_feature
+        active_feature = Feature(branches.get(active_feature))
+        active_feature.name = name
+        return active_feature
+
     def _git(self, log_out, repo_location=None):
         repo_location = repo_location or self.repo_location
         git = sh.git
@@ -326,16 +342,32 @@ class GitRepo(object):
             '--git-dir', repo_location / '.git',
             '--work-tree', repo_location)
 
-    def _validate_branch_set(self):
-        if not self.active_branch_set:
-            return False
+    def _validate_active_feature(self):
+        active_feature = self.active_feature
         current_branch = self.current_branch
-        if self.active_branch_set.branch != current_branch:
+        if not active_feature.branch:
+            return False
+        if active_feature.branch != current_branch:
             ctx.logger.warn(
-                'Current branch: "{0}" does not match current branch set: '
-                '{1}'.format(current_branch, self.active_branch_set))
+                'Current branch: "{0}" does not match the active feature '
+                'branch :{1}'.format(current_branch, active_feature))
             return False
         return True
+
+    def _branch_exists(self, branch, local_only=False):
+        branch_exists = self.git_output.bake(
+                'show-ref', verify=True, quiet=True)
+        refs = ['refs/heads']
+        if not local_only:
+            refs.append('refs/remotes/origin')
+        for ref in refs:
+            try:
+                branch_exists('{0}/{1}'.format(ref, branch))
+            except sh.ErrorReturnCode:
+                pass
+            else:
+                return True
+        return False
 
     def _fix_branch_name(self, branch):
         if not branch.startswith('.'):
@@ -347,7 +379,21 @@ class GitRepo(object):
 repo = GitRepo()
 
 
-class BranchSet(dict):
+@workflow
+def check_branch_exists(branch, **_):
+    repos = []
+    for instance in workflow_ctx.node_instances:
+        if instance.node.type != 'git_repo':
+            continue
+        exists = instance.execute_operation('git.branch_exists', kwargs={
+            'branch': branch
+        }).get()
+        if exists:
+            repos.append(instance.node.id[:-len('-repo')])
+    return repos
+
+
+class Feature(dict):
 
     def __init__(self, initial):
         self.update(initial)
@@ -376,6 +422,10 @@ class BranchSet(dict):
     def name(self):
         return self.get('name')
 
+    @name.setter
+    def name(self, value):
+        self['name'] = value
+
     @property
     def base(self):
         return self.get('base', 'master')
@@ -389,5 +439,6 @@ def func(repo_method):
     return wrapper
 
 for method in ['clone', 'configure', 'pull', 'status', 'checkout', 'reset',
-               'rebase', 'squash', 'diff']:
+               'rebase', 'squash', 'diff', 'create_branch', 'branch_exists',
+               'delete_branch']:
     globals()[method] = func(method)

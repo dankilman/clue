@@ -23,6 +23,34 @@ def package_completer(env, prefix, **_):
             n.id.startswith(prefix))
 
 
+def repo_completer(env, prefix, **_):
+    nodes = env.storage.get_nodes()
+    suffix_len = len('-repo')
+    return (n.id[:-suffix_len] for n in nodes
+            if n.type == 'git_repo' and
+            n.id.startswith(prefix))
+
+
+def active_feature_repo_completer(env, prefix, **_):
+    import json
+    with open(env.storage._payload_path) as f:
+        active_feature = json.load(f).get('active_feature')
+    if not active_feature:
+        return []
+    features = _load_features_file(env)
+    active_feature = features.get(active_feature)
+    if not active_feature:
+        return []
+    repos = active_feature.get('repos', [])
+    return (repo for repo in repo_completer(env, prefix)
+            if repo in repos)
+
+
+def features_completer(env, prefix, **_):
+    features = _load_features_file(env)
+    return [k for k in features if k.startswith(prefix)]
+
+
 def branches_completer(env, prefix, **_):
     versions_prefix = '::'
     if prefix.startswith(versions_prefix):
@@ -39,17 +67,21 @@ def branches_completer(env, prefix, **_):
                       for r in result]
             return [r for r in result if r.startswith(prefix)]
     else:
-        branches_file = env.plan['inputs'].get('branches_file')
-        if not branches_file:
-            return []
-        import os
-        branches_file = os.path.expanduser(branches_file)
-        if not os.path.exists(branches_file):
-            return []
-        import yaml
-        with open(branches_file) as f:
-            branches = yaml.safe_load(f) or {}
-        result = [k for k in branches if k.startswith(prefix)]
+        result = []
         if 'default'.startswith(prefix):
             result.append('default')
         return result
+
+
+def _load_features_file(env):
+    features_file = env.plan['inputs'].get('features_file')
+    if not features_file:
+        return []
+    import os
+    features_file = os.path.expanduser(features_file)
+    if not os.path.exists(features_file):
+        return []
+    import yaml
+    with open(features_file) as f:
+        features = yaml.safe_load(f) or {}
+    return features

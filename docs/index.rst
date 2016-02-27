@@ -27,6 +27,6 @@ Documentation for ``clash`` can be found `here <https://clash.readthedocs.org>`_
     installation
     getting_started
     inputs_yaml
-    branch_sets
+    features
     additional_commands
     advanced
