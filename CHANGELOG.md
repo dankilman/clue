@@ -12,7 +12,7 @@
   may be re-added in the future.
 
 ## What's New
-* A new `feature` subcommand has been added. See `` for details.
+* A new `feature` subcommand has been added. See [Features](http://clue.readthedocs.org/en/latest/features.html) for details.
 * Default inputs now include the `je` and `cloudify-versions` repositories.
   `je` is a tool used to manage system tests in jenkins. `cloudify-versions`
   is used to support the new `clue git checkout ::` feature.
