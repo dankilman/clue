@@ -212,9 +212,10 @@ Because Cloudify no longer advances plugin versions alongside the core version,
 this feature should be considered deprecated, but it is still useful when you
 need to checkout a previously released Cloudify version.
 
-The last thing ``clue git checkout`` knows how to do is checkout a branch set.
-Branch sets are sets of repositories and their matching branches. They are covered
-thoroughly in :doc:`branch_sets`
+If ``cloudify-versions`` is included in the ``inputs.yaml`` (it is by default),
+running ``clue git checkout ::{TAG/BRANCH NAME}`` will checkout the matching
+tag for components that are described in it, and will checkout ``TAG/BRANCH``
+for all ``core`` repos.
 
 ``clue pip install``
 --------------------

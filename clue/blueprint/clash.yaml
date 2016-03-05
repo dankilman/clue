@@ -38,7 +38,7 @@ env_create:
     clone_method: { arg: clone_method }
     virtualenv_name: { arg: virtualenv_name }
     organization: { arg: organization }
-    branches_file: { concat: [{ user_config: storage_dir }, '/branches.yaml'] }
+    features_file: { concat: [{ user_config: storage_dir }, '/features.yaml'] }
 
 hooks:
   after_env_create: clue.hooks:after_env_create
@@ -58,8 +58,50 @@ commands:
   install:
     workflow: install
 
-  branch:
-    function: clue.functions:branch
+  feature:
+    list:
+      function: clue.feature:ls
+    create:
+      function: clue.feature:create
+      args:
+        - name: name
+          completer: clue.completion:features_completer
+        - name: [-b, --branch]
+          required: true
+        - name: --base
+    sync-repos:
+      function: clue.feature:sync_repos
+      args:
+        - name: [-n, --feature-name]
+          completer: clue.completion:features_completer
+    checkout:
+      function: clue.feature:checkout
+      args:
+        - name: name
+          completer: clue.completion:features_completer
+    deactivate:
+      function: clue.feature:deactivate
+    finish:
+      function: clue.feature:finish
+      args:
+        - name: [-n, --feature-name]
+          completer: clue.completion:features_completer
+    add-repo:
+      function: clue.feature:add_repo
+      args:
+        - name: repo
+          completer: clue.completion:repo_completer
+        - name: [-n, --feature-name]
+          completer: clue.completion:features_completer
+    remove-repo:
+      function: clue.feature:remove_repo
+      args:
+        - name: repo
+          completer: clue.completion:active_feature_repo_completer
+        - name: [-f, --force]
+          default: false
+        - name: [-n, --feature-name]
+          completer: clue.completion:features_completer
 
   pip:
     install:
@@ -74,7 +116,7 @@ commands:
     status:
       args:
         - name: [-a, --active]
-          help: only display active branch set repos
+          help: only display active feature repos
           default: false
       task: *sequential_tasks
       workflow: execute_operation
@@ -91,7 +133,7 @@ commands:
           help: range to pass to git diff
           default: ''
         - name: [-a, --active]
-          help: only apply diff to active branch set repos
+          help: only apply diff to active feature repos
           default: false
         - name: [-c, --cached]
           help: pass --cached to underlying 'git diff' command

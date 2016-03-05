@@ -42,6 +42,8 @@ inputs:
       Each specified repo will be cloned to 'repos_dir' if it doesn't exist
       there already.
     default:
+      cloudify-versions:
+        type: versions
       cloudify-dsl-parser:
         type: core
       cloudify-rest-client:
@@ -154,6 +156,9 @@ inputs:
         properties:
           organization: dankilman
         python: false
+      je:
+        properties:
+          organization: dankilman
   virtualenv_name:
     description: |
       The virtualenv name in which all managed python packages will be installed
@@ -172,9 +177,9 @@ inputs:
     description: |
       Clone GitHub repos using 'ssh' or 'https'.
     default: https
-  branches_file:
+  features_file:
     description: |
-      Path to yaml file with branch sets.
+      Path to yaml file with feature definitions.
       A default empty file is generated for each newly created env next to the
       generated inputs file.
   virtualenvwrapper_path:
@@ -201,6 +206,7 @@ inputs:
     - cfy
     - claw
     - clue
+    - je
   requirements:
     description: |
       Requirements to install in virtualenv.
@@ -260,9 +266,9 @@ node_types:
       branch:
         description: the repo branch
         default: master
-      branches_file:
-        description: path to file with branch set definitions
-        default: { get_input: branches_file }
+      features_file:
+        description: path to file with feature definitions
+        default: { get_input: features_file }
       location:
         default: { get_input: repos_dir }
       repo_type:
@@ -318,6 +324,20 @@ node_types:
           inputs:
             origin: {}
             hard: {}
+        create_branch:
+          implementation: self.operations.git.create_branch
+          inputs:
+            branch: {}
+            base: {}
+        delete_branch:
+          implementation: self.operations.git.delete_branch
+          inputs:
+            branch: {}
+            force: {}
+        branch_exists:
+          implementation: self.operations.git.branch_exists
+          inputs:
+            branch: {}
 
   virtualenv:
     derived_from: cloudify.nodes.Root
@@ -505,6 +525,12 @@ node_templates:
         start:
           inputs:
             virtualenv_name: { get_property: [virtualenv, name] }
+
+workflows:
+  check_branch_exists:
+    mapping: self.operations.git.check_branch_exists
+    parameters:
+      branch: {}
 
 plugins:
   self:

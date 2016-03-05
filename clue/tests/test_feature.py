@@ -23,9 +23,9 @@ from clue import tests
 git = sh.git
 
 
-class TestBranch(tests.BaseTest):
+class TestFeature(tests.BaseTest):
 
-    def test(self):
+    def test_list(self):
         branch_set1 = {
             'branch': '3.3.1-build',
             'base': '3.3.1-build',
@@ -40,11 +40,11 @@ class TestBranch(tests.BaseTest):
                 'cloudify-rest-client': '3.3.1-build'
             }
         }
-        branches_yaml = self.workdir / 'branches.yaml'
-        branches_yaml.write_text(yaml.safe_dump({
+        features_yaml = self.workdir / 'features.yaml'
+        features_yaml.write_text(yaml.safe_dump({
             'test1': branch_set1,
             'test2': branch_set2,
         }))
         self.clue_install()
-        # No real assertions for now
-        self.clue.branch()
+        # TODO: No real assertions for now
+        self.clue.feature.list()

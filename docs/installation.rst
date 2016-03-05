@@ -45,7 +45,7 @@ Setting Up The Environment
         $ cd $CLUE_HOME
         $ clue env create --repos-dir=$HOME/dev/repos
 
-The ``env create`` command created three files: ``inputs.yaml``, ``branches.yaml``
+The ``env create`` command created three files: ``inputs.yaml``, ``features.yaml``
 and ``macros.yaml`` which are covered in their own sections.
 
 It also created (or updated) a global configuration file located at ``~/.clue``

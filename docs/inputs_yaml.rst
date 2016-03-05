@@ -8,12 +8,12 @@ Before you can start using ``clue`` you may need/want to make some modifications
 to the inputs file. Most inputs already have sane defaults for managing a Cloudify
 based environment. In this section, we'll go over the different inputs.
 
-``branches_file``
+``features_file``
 -----------------
-The ``branches_file`` input points to the location of the ``branches.yaml`` used
+The ``features_file`` input points to the location of the ``features.yaml`` used
 by ``clue``. The default value already point to a file that was generated during
 environment creation. You can leave the default value as is for now. When we
-talk about *Active Branch Sets*, we'll get back to this file.
+talk about *Features*, we'll get back to this file.
 
 .. _clone_method:
 
@@ -72,7 +72,7 @@ want to use ``clue`` to manage different development environments.
 -------------------------------
 Each value in this list will be registered by python argcomplete in the ``postactive``
 script of the managed virtualenv. The default value includes ``cfy``, ``clue``
-and ``claw``.
+,``claw`` and ``je``.
 
 .. warning::
     ``clue`` makes use of ``virtualenvwrapper``'s ``postactivate`` script to

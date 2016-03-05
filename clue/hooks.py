@@ -16,8 +16,8 @@
 
 
 def after_env_create(loader, **kwargs):
-    branches_yaml = loader.user_config.storage_dir / 'branches.yaml'
-    branches_yaml.touch()
+    features_yaml = loader.user_config.storage_dir / 'features.yaml'
+    features_yaml.touch()
 
 
 def before_init(blueprint, inputs, **kwargs):

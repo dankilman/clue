@@ -123,7 +123,7 @@ class TestGit(tests.BaseTest):
         # test active
         with core_repo_dir:
             git.reset('--hard', 'HEAD')
-        self.clue.git.checkout('test')
+        self.clue.feature.checkout('test')
         output = self.clue.git.status(active=True).stdout.strip()
         self.assertIn('cloudify-rest-client', output)
         self.assertNotIn('flask-securest', output)
@@ -142,8 +142,8 @@ class TestGit(tests.BaseTest):
             'branch': '3.3.1-build',
             'repos': ['cloudify-rest-client']
         }
-        branches_file = self.workdir / 'branches.yaml'
-        branches_file.write_text(yaml.safe_dump({
+        features_file = self.workdir / 'features.yaml'
+        features_file.write_text(yaml.safe_dump({
             'test': test_branches,
             'test2': test_branches2
         }))
@@ -160,7 +160,7 @@ class TestGit(tests.BaseTest):
                 with repo:
                     self.assertIn(expected, git.status())
 
-        def assert_branches_file():
+        def assert_features_file():
             for repo, expected in [(core_repo_dir, '3.3.1-build'),
                                    (plugin_repo_dir, 'master'),
                                    (misc_repo_dir, 'master')]:
@@ -172,14 +172,14 @@ class TestGit(tests.BaseTest):
         assert_custom()
         self.clue.git.checkout('master')
         assert_master()
-        self.clue.git.checkout('test')
-        assert_branches_file()
+        self.clue.feature.checkout('test')
+        assert_features_file()
         self.clue.git.checkout('.3.1-build')
         assert_custom()
         self.clue.git.checkout('master')
         assert_master()
-        self.clue.git.checkout('test2')
-        assert_branches_file()
+        self.clue.feature.checkout('test2')
+        assert_features_file()
         self.clue.git.checkout('master')
         assert_master()
         with misc_repo_dir:
@@ -195,12 +195,12 @@ class TestGit(tests.BaseTest):
             branch=branch,
             base=base)
 
-        # rebase with no "active" branch set should not do anything
+        # rebase with no "active" feature should not do anything
         output = self.clue.git.rebase().stdout.strip()
         self.assertEqual(len(output), 0)
 
-        # only "active" branch set repos should be affected
-        self.clue.git.checkout('test')
+        # only "active" feature repos should be affected
+        self.clue.feature.checkout('test')
         output = self.clue.git.rebase().stdout.strip()
         self.assertEqual(len(output.split('\n')), 1)
         self.assertIn('cloudify-rest-client', output)
@@ -220,24 +220,18 @@ class TestGit(tests.BaseTest):
         output = self.clue.git.rebase().stdout.strip()
         self.assertEqual(len(output.split('\n')), 1)
         self.assertIn('cloudify-rest-client', output)
-        self.assertIn('does not match current branch set', output)
-
-        # 'clue git checkout' of anything that is not a repo set, should
-        # remove "active" branch set state
-        self.clue.git.checkout('default')
-        output = self.clue.git.rebase().stdout.strip()
-        self.assertEqual(len(output), 0)
+        self.assertIn('does not match the active feature branch', output)
 
         # Unclean re-bases should be aborted
-        self._update_branches_yaml(branch=branch, base='master')
-        self.clue.git.checkout('test')
+        self._update_features_yaml(branch=branch, base='master')
+        self.clue.feature.checkout('test')
         output = self.clue.git.rebase().stdout.strip()
         self.assertIn('Failed rebase, aborting', output)
         self.assertFalse((core_repo_dir / '.git' / 'rebase-apply').isdir())
 
         # Test default master base
-        self._update_branches_yaml(branch='master')
-        self.clue.git.checkout('test')
+        self._update_features_yaml(branch='master')
+        self.clue.feature.checkout('test')
         output = self.clue.git.rebase().stdout.strip()
         self.assertEqual(len(output.split('\n')), 1)
         self.assertIn('cloudify-rest-client', output)
@@ -248,7 +242,7 @@ class TestGit(tests.BaseTest):
         core_repo_dir, _, _ = self._install_repo_types_with_branches(
             branch=branch)
 
-        # squash with no "active" branch set should not do anything
+        # squash with no "active" feature should not do anything
         output = self.clue.git.squash().stdout.strip()
         self.assertEqual(len(output), 0)
 
@@ -264,8 +258,8 @@ class TestGit(tests.BaseTest):
             after_commits_sha = self._current_sha()
             self.assertNotEqual(initial_sha, after_commits_sha)
 
-        # squash command requires active branch set
-        self.clue.git.checkout('test')
+        # squash command requires active feature
+        self.clue.feature.checkout('test')
 
         # Test squash when there is more than 1 commit
         self.clue.git.squash()
@@ -282,8 +276,8 @@ class TestGit(tests.BaseTest):
 
         # test .3.1-build => 3.3.1-build transformation by examining
         # error message of illegal squash
-        self._update_branches_yaml(branch=branch, base='.3.1-build')
-        self.clue.git.checkout('test')
+        self._update_features_yaml(branch=branch, base='.3.1-build')
+        self.clue.feature.checkout('test')
         with self.assertRaises(sh.ErrorReturnCode) as c:
             self.clue.git.squash()
         self.assertIn('3.3.1-build', c.exception.stdout)
@@ -291,12 +285,12 @@ class TestGit(tests.BaseTest):
     def test_reset(self):
         core_repo_dir, _, _ = self._install_repo_types_with_branches()
 
-        # reset with no "active" branch set should not do anything
+        # reset with no "active" feature should not do anything
         output = self.clue.git.reset().stdout.strip()
         self.assertEqual(len(output), 0)
 
-        # reset command requires active branch set
-        self.clue.git.checkout('test')
+        # reset command requires active feature
+        self.clue.feature.checkout('test')
 
         def test_reset(hard=False, origin=None):
             with core_repo_dir:
@@ -328,7 +322,7 @@ class TestGit(tests.BaseTest):
         self.assertIn('cloudify-script-plugin', output)
         self.assertNotIn('flask-securest', output)
         self.assertNotIn('ERROR', output)
-        self.clue.git.checkout('test')
+        self.clue.feature.checkout('test')
         # test active
         output = self.clue.git.diff(r=revision_range, a=True).stdout.strip()
         self.assertIn('cloudify-rest-client', output)
@@ -374,10 +368,10 @@ class TestGit(tests.BaseTest):
             'user.email': 'john.doe@example.com'
         }
         core, plugin, misc = self._install_repo_types(git_config=git_config)
-        self._update_branches_yaml(branch, base)
+        self._update_features_yaml(branch, base)
         return core, plugin, misc
 
-    def _update_branches_yaml(self, branch, base=None):
+    def _update_features_yaml(self, branch, base=None):
         test_branches = {
             'repos': {
                 'cloudify-rest-client': branch
@@ -385,8 +379,8 @@ class TestGit(tests.BaseTest):
         }
         if base:
             test_branches['base'] = base
-        branches_file = self.workdir / 'branches.yaml'
-        branches_file.write_text(yaml.safe_dump({
+        features_file = self.workdir / 'features.yaml'
+        features_file.write_text(yaml.safe_dump({
             'test': test_branches,
         }))
 
