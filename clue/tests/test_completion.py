@@ -68,7 +68,8 @@ class TestCompletion(tests.BaseTest):
 
         # feature
         user = ['checkout', 'create', 'finish', 'deactivate', 'sync-repos',
-                'add-repo', 'remove-repo', 'list']
+                'add-repo', 'remove-repo', 'list', 'ci-status', 'compare',
+                'pull-request']
         expected = builtin + user
         self.assert_completion(expected, args=['feature'])
 
