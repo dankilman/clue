@@ -124,8 +124,8 @@ can be used to supply the pull request message and description. If none is suppl
 the branch name is used as the pull request message.
 
 .. note::
-    ``clue feature compare/ci-status/pull-request`` require that ``hub`` will
-    be installed and in ``PATH``.
+    ``clue feature compare/ci-status/pull-request`` require that
+    `hub <https://hub.github.com>`_ will be installed and in ``PATH``.
 
 Active Feature Git Related Commands
 -----------------------------------
