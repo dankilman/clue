@@ -102,6 +102,30 @@ commands:
           default: false
         - name: [-n, --feature-name]
           completer: clue.completion:features_completer
+    ci-status:
+      workflow: execute_operation
+      parameters:
+        operation: hub.ci_status
+        type_names: [git_repo]
+      event_cls: clue.output:NamedNodeEvent
+    compare:
+      workflow: execute_operation
+      parameters:
+        operation: hub.compare
+        type_names: [git_repo]
+      event_cls: clue.output:NamedNodeEvent
+    pull-request:
+      workflow: execute_operation
+      args:
+        - name: ['-f', '--file']
+        - name: ['-m', '--message']
+      parameters:
+        operation: hub.pull_request
+        operation_kwargs:
+          file: { arg: file }
+          message: { arg: message }
+        type_names: [git_repo]
+      event_cls: clue.output:NamedNodeEvent
 
   pip:
     install:

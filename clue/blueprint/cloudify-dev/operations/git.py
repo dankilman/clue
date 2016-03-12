@@ -143,13 +143,13 @@ class GitRepo(object):
             ctx.logger.error('Could not checkout branch {0}'.format(branch))
 
     def reset(self, hard, origin):
-        if not self._validate_active_feature():
+        if not self.validate_active_feature():
             return
         self.git.reset.bake(hard=hard)(
             '{0}/{1}'.format(origin, self.current_branch)).wait()
 
     def rebase(self):
-        if not self._validate_active_feature():
+        if not self.validate_active_feature():
             return
         base = self.active_feature.base
         try:
@@ -163,7 +163,7 @@ class GitRepo(object):
                 pass
 
     def squash(self):
-        if not self._validate_active_feature():
+        if not self.validate_active_feature():
             return
         if self.git_version < 'git version 1.9':
             ctx.logger.warn('git version >= 1.9 is required for squash.')
@@ -342,7 +342,7 @@ class GitRepo(object):
             '--git-dir', repo_location / '.git',
             '--work-tree', repo_location)
 
-    def _validate_active_feature(self):
+    def validate_active_feature(self):
         active_feature = self.active_feature
         current_branch = self.current_branch
         if not active_feature.branch:
@@ -377,6 +377,71 @@ class GitRepo(object):
         template = '3{}' if self.type == 'core' else '1{}'
         return template.format(branch)
 repo = GitRepo()
+
+
+class Hub(object):
+
+    def ci_status(self):
+        if not repo.validate_active_feature():
+            return
+        try:
+            self.hub('ci-status', '-v').wait()
+        except sh.ErrorReturnCode:
+            pass
+
+    def compare(self):
+        if not repo.validate_active_feature():
+            return
+        url = self.hub_output.compare(
+            '-u', '-b', repo.active_feature.base).stdout.strip()
+        import webbrowser
+        webbrowser.open(url)
+
+    def pull_request(self, message, file):
+        if not repo.validate_active_feature():
+            return
+        if message and file:
+            raise exceptions.NonRecoverableError(
+                'You cannot specify both a message and a file. Pick one!')
+        command = self.hub.bake('pull-request', '-b', repo.active_feature.base,
+                                '-o')
+        if message:
+            command = command.bake('-m', message)
+        elif file:
+            command = command.bake('-F', file)
+        else:
+            message = repo.active_feature.branch
+            command = command.bake('-m', message)
+        try:
+            command()
+        except sh.ErrorReturnCode:
+            pass
+
+    @property
+    def hub(self):
+        return self._hub(log_out=True)
+
+    @property
+    def hub_output(self):
+        return self._hub(log_out=False)
+
+    @staticmethod
+    def _hub(log_out):
+        repo_location = repo.repo_location
+        try:
+            hub = sh.hub
+        except sh.CommandNotFound:
+            raise exceptions.NonRecoverableError(
+                'hub must be installed to use this command.')
+        if log_out:
+            hub = bake(hub)
+        env = os.environ.copy()
+        env.update({
+            'GIT_WORK_TREE': repo_location,
+            'GIT_DIR': repo_location / '.git'
+        })
+        return hub.bake(_env=env)
+hub = Hub()
 
 
 @workflow
@@ -435,10 +500,14 @@ def func(repo_method):
     @operation
     def wrapper(**kwargs):
         kwargs.pop('ctx', None)
-        return getattr(repo, repo_method)(**kwargs)
+        try:
+            method = getattr(repo, repo_method)
+        except AttributeError:
+            method = getattr(hub, repo_method)
+        return method(**kwargs)
     return wrapper
 
 for method in ['clone', 'configure', 'pull', 'status', 'checkout', 'reset',
                'rebase', 'squash', 'diff', 'create_branch', 'branch_exists',
-               'delete_branch']:
+               'delete_branch', 'ci_status', 'compare', 'pull_request']:
     globals()[method] = func(method)

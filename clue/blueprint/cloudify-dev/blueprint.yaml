@@ -338,6 +338,14 @@ node_types:
           implementation: self.operations.git.branch_exists
           inputs:
             branch: {}
+      hub:
+        ci_status: self.operations.git.ci_status
+        compare: self.operations.git.compare
+        pull_request:
+          implementation: self.operations.git.pull_request
+          inputs:
+            message: {}
+            file: {}
 
   virtualenv:
     derived_from: cloudify.nodes.Root

@@ -1,3 +1,13 @@
+# 0.35
+
+## What's new
+* `clue feature` got three new subcommands: `ci-status`, `compare` and `pull-request`.
+  These commands require [`hub`](https://hub.github.com/) to be installed and in `PATH`.
+  A future version of `clue` may install `hub` for you, but this has to be done
+  manually for now.
+  See [Features](http://clue.readthedocs.org/en/latest/features.html) for details.
+  To be able to used these, `clue apply` should be invoked first.
+
 # 0.34
 
 ## Breaking Changes

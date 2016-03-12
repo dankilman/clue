@@ -104,6 +104,29 @@ Running ``clue feature finish`` will run ``clue feature remove-repo`` for each
 repository in the feature definition, it will then remove the feature definition
 and deactivate it.
 
+``clue feature compare``
+------------------------
+Calls ``hub compare`` on each repo included in the feature definition to open
+a web browser showing a comparison between the base branch and the feature branch.
+
+``clue feature ci-status``
+--------------------------
+Calls ``hub ci-status`` on each repo included in the feature definition to show
+each feature branch status in terms of travis/circle-ci.
+
+``clue feature pull-request``
+-----------------------------
+Calls ``hub pull-request`` on each repo included in the feature definition.
+This command will open a pull request in GitHub to the ``base`` branch defined
+for the feature (``master`` by default).
+Accepts optional (mutually exclusive) ``--message`` and ``--file`` arguments that
+can be used to supply the pull request message and description. If none is supplied,
+the branch name is used as the pull request message.
+
+.. note::
+    ``clue feature compare/ci-status/pull-request`` require that ``hub`` will
+    be installed and in ``PATH``.
+
 Active Feature Git Related Commands
 -----------------------------------
 Now that we know about this *active feature* concept, what does it actually
