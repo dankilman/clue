@@ -14,12 +14,16 @@
 # limitations under the License.
 ############
 
+import sh
+
 from clue import tests
 
 
 class TestInstall(tests.BaseTest):
 
     def test_default(self):
-        self.clue.env.create(repos_dir=self.repos_dir)
-        self.clue.init()
-        self.clue.install()
+        try:
+            self.clue.env.create(repos_dir=self.repos_dir)
+            self.clue.apply()
+        except sh.ErrorReturnCode as e:
+            self.fail(e.stdout)
