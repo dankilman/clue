@@ -139,6 +139,8 @@ inputs:
         type: plugin
       flask-securest: {}
       docs.getcloudify.org:
+        properties:
+          branch: 3.5.0-build
         python: false
       docs.getcloudify.org-site:
         python: false
