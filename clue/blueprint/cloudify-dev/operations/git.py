@@ -105,18 +105,7 @@ class GitRepo(object):
         active_feature = self.active_feature
         if branch.startswith(versions_prefix):
             versions_branch = branch[len(versions_prefix):]
-            repo_git = self._git(
-                log_out=False,
-                repo_location=self.versions_repo_location)
-            try:
-                raw_versions = repo_git.show(
-                    '{}:versions.yaml'.format(versions_branch)).stdout.strip()
-            except sh.ErrorReturnCode:
-                raw_versions = repo_git.show(
-                    'origin/{}:versions.yaml'.format(
-                        versions_branch)).stdout.strip()
-            versions = yaml.safe_load(raw_versions)
-            components = versions.get('components', {})
+            components = self._read_versions_file(versions_branch)
             if self.name in components:
                 branch = components[self.name]
             elif self.type in ['core', 'versions']:
@@ -124,7 +113,23 @@ class GitRepo(object):
             else:
                 branch = default_branch
         elif active_feature.name == branch:
-            branch = active_feature.branch or default_branch
+            branch = active_feature.branch
+            base_branch = active_feature.base
+            if not branch:
+                if base_branch.startswith(versions_prefix):
+                    versions_branch = base_branch[len(versions_prefix):]
+                    components = self._read_versions_file(versions_branch)
+                    if self.name in components:
+                        branch = components[self.name]
+                    elif self.type in ['core', 'versions']:
+                        branch = versions_branch
+                    else:
+                        branch = default_branch
+                else:
+                    if self.type in ['core', 'versions']:
+                        branch = base_branch
+                    else:
+                        branch = default_branch
         elif branch == 'default':
             branch = default_branch
         elif self.type == 'misc':
@@ -376,6 +381,20 @@ class GitRepo(object):
             return branch
         template = '3{}' if self.type == 'core' else '1{}'
         return template.format(branch)
+
+    def _read_versions_file(self, versions_branch):
+        repo_git = self._git(
+            log_out=False,
+            repo_location=self.versions_repo_location)
+        try:
+            raw_versions = repo_git.show(
+                '{}:versions.yaml'.format(versions_branch)).stdout.strip()
+        except sh.ErrorReturnCode:
+            raw_versions = repo_git.show(
+                'origin/{}:versions.yaml'.format(
+                    versions_branch)).stdout.strip()
+        versions = yaml.safe_load(raw_versions)
+        return versions.get('components', {})
 repo = GitRepo()
 
 

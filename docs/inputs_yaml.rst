@@ -19,7 +19,7 @@ talk about *Features*, we'll get back to this file.
 
 ``clone_method``
 ----------------
-By default, ``clone_method`` is set to ``http``. If you use ``ssh`` to clone GitHub
+By default, ``clone_method`` is set to ``https``. If you use ``ssh`` to clone GitHub
 repositories, change this value to ``ssh``.
 
 ``constraints``
