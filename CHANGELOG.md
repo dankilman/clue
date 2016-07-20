@@ -1,3 +1,12 @@
+# 0.36
+## What's new
+* `clue feature checkout` will now consider the feature `base` (if one was
+configured) for core repositories that are not part of the active feature.
+`base` can also be prefix with `::`, in which case, the checkout semantics for
+repositories not included in the active feature is identical to the semantics
+of the `git checkout` command when the specified "branch" is prefixed with `::`.
+(Documentation for these additions is currently lacking)
+
 # 0.35
 
 ## What's new
